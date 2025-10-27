@@ -1,7 +1,7 @@
 "use client"
 import {motion} from "framer-motion";
 import {Button} from "@/components/ui/button";
-import type {SelectedDetail} from "./types";
+import type {SelectedDetail} from "../../../types/types";
 import {MdPayments} from "react-icons/md";
 import {Input} from "@/components/ui/input";
 import {useEffect, useMemo, useState} from "react";

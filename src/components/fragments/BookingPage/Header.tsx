@@ -8,7 +8,7 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type {Step} from "./types";
+import type {Step} from "../../../types/types";
 
 interface HeaderProps {
     step: Step;

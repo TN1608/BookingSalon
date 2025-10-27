@@ -1,10 +1,10 @@
 "use client"
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import type { SelectedDetail, Step } from "./types";
+import type { SelectedDetail, Step } from "../../../types/types";
 import { IoMdRemove } from "react-icons/io";
 
-import type { SelectedProfessional, TStylist } from "./types";
+import type { SelectedProfessional, TStylist } from "../../../types/types";
 
 interface SummaryAsideProps {
   items: SelectedDetail[];

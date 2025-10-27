@@ -14,6 +14,7 @@ import {
 import type {SelectedItem, Step, SelectedProfessional} from "@/components/fragments/BookingPage";
 import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
+import SuccessPage from "@/components/Success";
 
 export default function BookingPage() {
     const [step, setStep] = useState<Step>(1);
@@ -24,6 +25,8 @@ export default function BookingPage() {
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [dialogService, setDialogService] = useState<TService | null>(null);
     const [professional, setProfessional] = useState<SelectedProfessional | null>(null);
+
+    const [isSuccessful, setIsSuccessful] = useState(false);
 
     const selectedDetails = useMemo(
         () =>
@@ -36,6 +39,8 @@ export default function BookingPage() {
                 .filter(Boolean) as { service: TService; variant: TVariant }[],
         [selected]
     );
+
+    const isAbove = useMemo(() => selectedDetails.length >= 2, [selectedDetails]);
 
     const total = useMemo(() => selectedDetails.reduce((sum, d) => sum + d.variant.price, 0), [selectedDetails]);
 
@@ -88,7 +93,17 @@ export default function BookingPage() {
     const goNext = () => setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s === 3 ? 4 : 4));
     const goBack = () => setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1));
 
-
+    if (isSuccessful) {
+        return (
+            <motion.div
+                initial={{opacity: 0, y: 8}}
+                animate={{opacity: 1, y: 0}}
+                exit={{opacity: 0, y: -8}}
+                transition={{duration: 0.25}}>
+                <SuccessPage/>
+            </motion.div>
+        );
+    }
     return (
         <div
             className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 lg:py-32 lg:px-18">
@@ -123,6 +138,8 @@ export default function BookingPage() {
                                 <motion.section key={"step2"} initial={{opacity: 0, y: 8}} animate={{opacity: 1, y: 0}}
                                                 exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
                                     <Professional
+                                        items={selectedDetails}
+                                        isAbove={isAbove}
                                         stylists={STYLISTS}
                                         professional={professional}
                                         setProfessional={setProfessional}
@@ -161,9 +178,7 @@ export default function BookingPage() {
                                         total={total}
                                         onBack={goBack}
                                         onConfirm={() => {
-                                            toast("Booking confirmed! We look forward to seeing you.", {
-                                                description: "Thank you for booking with us.",
-                                            })
+                                            setIsSuccessful(true)
                                         }}
                                     />
                                 </motion.section>
@@ -184,10 +199,12 @@ export default function BookingPage() {
                         onContinue={goNext}
                         canContinue={step === 1 ? canContinueFromServices : step === 2 ? canContinueFromProfessional : canContinueFromSchedule}
                         onPayAndConfirm={() => {
+                            setIsSuccessful(true);
                         }}
                         professional={professional}
                         stylists={STYLISTS}
                     />
+
                 </div>
             </div>
         </div>

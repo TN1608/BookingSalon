@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import CategoryChips from "./CategoryChips";
 import VariantDialog from "./VariantDialog";
-import { container, fade } from "./types";
-import type { SelectedItem } from "./types";
+import { container, fade } from "../../../types/types";
+import type { SelectedItem } from "../../../types/types";
 import type { TService, TVariant } from "@/app/booking/constants";
 import { FaPlus } from "react-icons/fa";
 

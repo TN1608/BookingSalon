@@ -1,7 +1,8 @@
 "use client"
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { container, fade } from "./types";
+import { container, fade } from "../../../types/types";
+import {ScrollArea, ScrollBar} from "@/components/ui/scroll-area";
 
 interface DayItem { key: string; label: string }
 
@@ -32,7 +33,7 @@ export default function Schedule({
     <section>
       <h2 className="text-2xl font-semibold">Choose date & time</h2>
 
-      <div className="mt-4 overflow-x-auto">
+      <ScrollArea className="mt-4">
         <div className="flex gap-3 min-w-max pr-2">
           {days.map((d) => {
             const active = selectedDate === d.key;
@@ -56,7 +57,8 @@ export default function Schedule({
             );
           })}
         </div>
-      </div>
+          <ScrollBar orientation="horizontal" />
+      </ScrollArea>
 
       <motion.div variants={container} initial="hidden" animate="show" className="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
         {timeSlots.map((t) => {
