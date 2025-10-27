@@ -13,9 +13,10 @@ import type {Step} from "../../../types/types";
 interface HeaderProps {
     step: Step;
     setStep: (s: Step) => void;
+    waitlistActive?: boolean;
 }
 
-export default function Header({step, setStep}: HeaderProps) {
+export default function Header({step, setStep, waitlistActive}: HeaderProps) {
     return (
         <motion.header
             initial={{opacity: 0, y: -8}}
@@ -79,12 +80,24 @@ export default function Header({step, setStep}: HeaderProps) {
                             >
                                 Schedule
                             </BreadcrumbLink>
-                        ) : step === 3 ? (
+                        ) : step === 3 && !waitlistActive ? (
                             <BreadcrumbPage>Schedule</BreadcrumbPage>
                         ) : (
                             <span className="text-muted-foreground">Schedule</span>
                         )}
                     </BreadcrumbItem>
+                    {waitlistActive && (
+                        <>
+                            <BreadcrumbSeparator/>
+                            <BreadcrumbItem>
+                                {step === 3 && waitlistActive ? (
+                                    <BreadcrumbPage>Waitlists</BreadcrumbPage>
+                                ) : (
+                                    <span className="text-muted-foreground">Waitlists</span>
+                                )}
+                            </BreadcrumbItem>
+                        </>
+                    )}
                     <BreadcrumbSeparator/>
                     <BreadcrumbItem>
                         {step === 4 ? (

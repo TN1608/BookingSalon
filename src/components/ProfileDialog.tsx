@@ -11,7 +11,7 @@ import {TStylist} from "@/app/booking/constants";
 interface ProfileDialogProps {
     open: boolean
     onClose: () => void
-    professional: TStylist
+    professional: TStylist | null
 }
 
 
@@ -191,7 +191,7 @@ export default function ProfileDialog({open, onClose, professional}: ProfileDial
                                         id="reviews"
                                     >
                                         <AnimatePresence>
-                                            {professional.reviews.map((review, idx) => (
+                                            {professional?.reviews?.map((review, idx) => (
                                                 <motion.div
                                                     key={review.id}
                                                     initial={{opacity: 0, x: -20}}

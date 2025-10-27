@@ -11,7 +11,7 @@ import {
     SummaryAside,
 } from "@/components/fragments/BookingPage";
 
-import type {SelectedItem, Step, SelectedProfessional} from "@/components/fragments/BookingPage";
+import type {SelectedItem, Step, SelectedProfessional, WaitlistEntry} from "@/components/fragments/BookingPage";
 import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
 import SuccessPage from "@/components/Success";
@@ -25,6 +25,10 @@ export default function BookingPage() {
     const [variantDialogOpen, setVariantDialogOpen] = useState(false);
     const [dialogService, setDialogService] = useState<TService | null>(null);
     const [professional, setProfessional] = useState<SelectedProfessional | null>(null);
+
+    // Waitlist
+    const [waitlistActive, setWaitlistActive] = useState(false);
+    const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{ }]);
 
     const [isSuccessful, setIsSuccessful] = useState(false);
 
@@ -88,7 +92,9 @@ export default function BookingPage() {
 
     const canContinueFromServices = selected.length > 0;
     const canContinueFromProfessional = Boolean(professional);
-    const canContinueFromSchedule = Boolean(selectedDate && selectedTime);
+    const canContinueFromSchedule = waitlistActive
+        ? waitlistEntries.some((e) => !!e.date)
+        : Boolean(selectedDate && selectedTime);
 
     const goNext = () => setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s === 3 ? 4 : 4));
     const goBack = () => setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1));
@@ -108,7 +114,7 @@ export default function BookingPage() {
         <div
             className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 lg:py-32 lg:px-18">
             <div className="container mx-auto px-4 py-10">
-                <Header step={step} setStep={setStep}/>
+                <Header step={step} setStep={setStep} waitlistActive={waitlistActive}/>
 
                 <div className="mt-8 grid lg:grid-cols-3 gap-8">
                     {/* Main panel */}
@@ -163,6 +169,15 @@ export default function BookingPage() {
                                         canContinue={canContinueFromSchedule}
                                         onBack={goBack}
                                         onContinue={goNext}
+                                        waitlistActive={waitlistActive}
+                                        setWaitlistActive={setWaitlistActive}
+                                        waitlistEntries={waitlistEntries}
+                                        onWaitlistChange={(index, patch) => {
+                                            setWaitlistEntries((prev) => prev.map((e, i) => i === index ? { ...e, ...patch } : e));
+                                        }}
+                                        onWaitlistAdd={() => setWaitlistEntries((prev) => [...prev, {}])}
+                                        onWaitlistRemove={(index) => setWaitlistEntries((prev) => prev.filter((_, i) => i !== index))}
+                                        canContinueWaitlist={waitlistEntries.some((e) => !!e.date)}
                                     />
                                 </motion.section>
                             )}
@@ -203,6 +218,8 @@ export default function BookingPage() {
                         }}
                         professional={professional}
                         stylists={STYLISTS}
+                        waitlistActive={waitlistActive}
+                        waitlistEntries={waitlistEntries}
                     />
 
                 </div>

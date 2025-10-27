@@ -1,8 +1,9 @@
 "use client"
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import type { SelectedDetail, Step } from "../../../types/types";
+import type { SelectedDetail, Step, WaitlistEntry } from "../../../types/types";
 import { IoMdRemove } from "react-icons/io";
+import { format } from "date-fns";
 
 import type { SelectedProfessional, TStylist } from "../../../types/types";
 
@@ -19,6 +20,9 @@ interface SummaryAsideProps {
   onPayAndConfirm?: () => void;
   professional?: SelectedProfessional | null;
   stylists?: TStylist[];
+  // Waitlist
+  waitlistActive?: boolean;
+  waitlistEntries?: WaitlistEntry[];
 }
 
 export default function SummaryAside({
@@ -34,6 +38,8 @@ export default function SummaryAside({
   onPayAndConfirm,
   professional,
   stylists,
+  waitlistActive,
+  waitlistEntries,
 }: SummaryAsideProps) {
   return (
     <motion.aside
@@ -89,7 +95,27 @@ export default function SummaryAside({
         })}
       </ul>
       <div className="mt-3 text-sm text-muted-foreground">
-        {selectedDate && selectedTime ? `${selectedDate} • ${selectedTime}` : "Choose date & time"}
+        {waitlistActive ? (
+          <div className="space-y-1">
+            {waitlistEntries && waitlistEntries.length > 0 ? (
+              waitlistEntries
+                .filter((e) => e.date)
+                .map((e, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <span>
+                      {e.date ? format(e.date, "PPP") : "—"}
+                      {" "}•{" "}
+                      {e.time ?? "Any time"}
+                    </span>
+                  </div>
+                ))
+            ) : (
+              <span>Choose date & time</span>
+            )}
+          </div>
+        ) : (
+          selectedDate && selectedTime ? `${selectedDate} • ${selectedTime}` : "Choose date & time"
+        )}
       </div>
       <div className="mt-4 flex items-center justify-between border-t pt-4">
         <span className="font-semibold">Total</span>

@@ -8,6 +8,9 @@ export type SelectedDetail = { service: Service; variant: Variant };
 export type SelectedItem = { serviceId: string; variantId: string };
 export type Step = 1 | 2 | 3 | 4;
 
+// Waitlist
+export type WaitlistEntry = { date?: Date; time?: string };
+
 export type ProfessionalMode = "any" | "stylist" | "perService";
 export type SelectedProfessional =
   | { mode: "any" }

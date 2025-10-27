@@ -8,6 +8,7 @@ import {useEffect, useMemo, useState} from "react";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
 import TermDialog from "@/components/TermDialog";
+import {Textarea} from "@/components/ui/textarea";
 
 interface ReviewProps {
     items: SelectedDetail[];
@@ -187,11 +188,15 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     </ol>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="*:not-first:mt-2">
+                    <Label className={"text-xl"}>Booking Note</Label>
+                    <Textarea placeholder="Include comments or requests about your booking." className={"min-h-[100px] w-xl"} />
+                </div>
+
+                <div className="flex items-center mt-4 gap-2">
                     <Checkbox onClick={() => setAgreed(!agreed)} checked={agreed} id="terms" name="terms"/>
-                    <Label>
-                        I agree to the{" "}
-                        <TermDialog/>
+                    <Label className={"flex flex-row gap-2 items-center"}>
+                        I agree to the <TermDialog/>
                     </Label>
                 </div>
                 <div className="flex items-center justify-between pt-2">
