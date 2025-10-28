@@ -102,9 +102,9 @@ export default function BookingPage() {
 
     const canContinueFromServices = selected.length > 0;
     const canContinueFromProfessional = Boolean(professional);
-    const canContinueFromSchedule = waitlistActive
-        ? waitlistEntries.some((e) => !!e.date)
-        : Boolean(selectedDate && selectedTime);
+    // const canContinueFromSchedule = waitlistActive
+    //     ? waitlistEntries.some((e) => !!e.date)
+    //     : Boolean(selectedDate && selectedTime);
 
     const goNext = () => setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s === 3 ? 4 : 4));
     const goBack = () => setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1));
@@ -168,6 +168,25 @@ export default function BookingPage() {
         openProfile(stylistId);
     }
 
+    const availableDates = useMemo(() => {
+        const keys = next14Days.map((d) => d.key)
+        const unavailableSet = new Set(unAvailableDates || [])
+        return keys.filter((k) => !unavailableSet.has(k))
+    },[next14Days,unAvailableDates])
+
+    const hasSelectedWaitlistsDate = waitlistEntries.some((e) => !!e.date);
+    const hasAvailableNow = waitlistEntries.some(
+        (e) => e.date && availableDates.includes(e.date.toISOString().slice(0, 10))
+    )
+
+    const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
+
+    const handleBookNow = (date: Date) => {
+        const key = date.toISOString().slice(0,10);
+        setWaitlistActive(false)
+        setSelectedDate(key)
+        setSelectedTime(timeSlots[0] ?? null)
+    }
 
     if (isSuccessful) {
         return (
@@ -233,6 +252,7 @@ export default function BookingPage() {
                                     <ScheduleSection
                                         days={next14Days}
                                         unavailableDates={unAvailableDates}
+                                        availableDates={availableDates}
                                         selectedStylistId={professional?.mode === "stylist" ? professional.stylistId : undefined}
                                         timeSlots={timeSlots}
                                         selectedDate={selectedDate}
@@ -258,6 +278,7 @@ export default function BookingPage() {
                                         onSelectAny={() => handleSelectAny()}
                                         onSelectStylist={(id) => handleSelectStylist(id)}
                                         onViewProfile={handleViewProfile}
+                                        onBookNow={handleBookNow}
                                     />
                                 </motion.section>
                             )}

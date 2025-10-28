@@ -34,6 +34,8 @@ interface ScheduleProps {
     canContinueWaitlist: boolean;
     // Unavailable + professionals
     unavailableDates?: string[];
+    availableDates?: string[];
+    onBookNow?: (date: Date) => void;
     nextAvailableMap?: Record<string, string>; // map from unavailable date key to next available date key
     stylists?: TStylist[];
     selectedStylistId?: string; // currently chosen stylist (if any)
@@ -60,6 +62,8 @@ export default function Schedule({
                                      onWaitlistRemove,
                                      canContinueWaitlist,
                                      unavailableDates = [],
+                                     availableDates = [],
+                                     onBookNow,
                                      nextAvailableMap = {},
                                      stylists = [],
                                      selectedStylistId,
@@ -82,6 +86,8 @@ export default function Schedule({
                 onBack={() => setWaitlistActive(false)}
                 onContinue={onContinue}
                 canContinue={canContinueWaitlist}
+                availableDates={availableDates}
+                onBookNow={onBookNow}
             />
         )
     }
