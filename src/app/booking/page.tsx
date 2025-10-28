@@ -16,6 +16,7 @@ import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
 import SuccessPage from "@/components/Success";
 import ProfileDialog from "@/components/ProfileDialog";
+import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm";
 
 export default function BookingPage() {
     const [step, setStep] = useState<Step>(1);
@@ -29,7 +30,8 @@ export default function BookingPage() {
 
     // Waitlist
     const [waitlistActive, setWaitlistActive] = useState(false);
-    const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{ }]);
+    const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{}]);
+    const [fromWaitlist, setFromWaitlist] = useState(false)
 
     const [isSuccessful, setIsSuccessful] = useState(false);
 
@@ -107,18 +109,28 @@ export default function BookingPage() {
     //     : Boolean(selectedDate && selectedTime);
 
     const goNext = () => setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s === 3 ? 4 : 4));
-    const goBack = () => setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1));
+    const goBack = () =>
+        setStep((s) => {
+            const next = s === 4 ? 3 : s === 3 ? 2 : 1;
+            if (next < 4) setFromWaitlist(false);
+            return next;
+        })
+
+    const goToConfirm = (cameFromWaitList = false) => {
+        setFromWaitlist(cameFromWaitList)
+        setStep(4)
+    }
 
     const unAvailableDates = useMemo(() => {
-        if(!professional) return [] as string[];
+        if (!professional) return [] as string[];
 
-        if(professional.mode === "stylist") {
+        if (professional.mode === "stylist") {
             const stylist = STYLISTS.find((s) => s.id === professional.stylistId);
-            if(!stylist) return [] as string[];
+            if (!stylist) return [] as string[];
             return stylist.unavailableDates;
         }
 
-        if(professional.mode === "perService") {
+        if (professional.mode === "perService") {
             const stylistIds = Object.values(professional.map || {});
             const dates = new Set<string>();
             stylistIds.forEach((id) => {
@@ -129,22 +141,22 @@ export default function BookingPage() {
         }
 
         return [] as string[];
-    },[professional])
+    }, [professional])
 
     const getSelectedStylistId = (serviceId: string) => {
-        if(!professional) return undefined;
+        if (!professional) return undefined;
 
-        if(serviceId) {
-            if(professional.mode === "perService") return (professional.map || {})[serviceId]
-            if(professional.mode === "stylist") return professional.stylistId;
+        if (serviceId) {
+            if (professional.mode === "perService") return (professional.map || {})[serviceId]
+            if (professional.mode === "stylist") return professional.stylistId;
             return undefined;
-        }else {
+        } else {
             return professional.mode === "stylist" ? professional.stylistId : undefined;
         }
     }
 
     const handleSelectAny = (serviceId?: string) => {
-        if(!serviceId) {
+        if (!serviceId) {
             setProfessional({mode: "any"})
             return;
         }
@@ -155,7 +167,7 @@ export default function BookingPage() {
     }
 
     const handleSelectStylist = (stylistId: string, serviceId?: string) => {
-        if(!serviceId) {
+        if (!serviceId) {
             setProfessional({mode: "stylist", stylistId})
             return;
         }
@@ -172,7 +184,7 @@ export default function BookingPage() {
         const keys = next14Days.map((d) => d.key)
         const unavailableSet = new Set(unAvailableDates || [])
         return keys.filter((k) => !unavailableSet.has(k))
-    },[next14Days,unAvailableDates])
+    }, [next14Days, unAvailableDates])
 
     const hasSelectedWaitlistsDate = waitlistEntries.some((e) => !!e.date);
     const hasAvailableNow = waitlistEntries.some(
@@ -182,10 +194,11 @@ export default function BookingPage() {
     const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
 
     const handleBookNow = (date: Date) => {
-        const key = date.toISOString().slice(0,10);
+        const key = date.toISOString().slice(0, 10);
         setWaitlistActive(false)
         setSelectedDate(key)
         setSelectedTime(timeSlots[0] ?? null)
+        setFromWaitlist(false)
     }
 
     if (isSuccessful) {
@@ -210,7 +223,8 @@ export default function BookingPage() {
                     <motion.main layout className="lg:col-span-2">
                         <AnimatePresence mode="wait">
                             {step === 1 && (
-                                <motion.section key="step1" initial={{opacity: 0, y: 8}} animate={{opacity: 1, y: 0}}
+                                <motion.section key="step1" initial={{opacity: 0, y: 8}}
+                                                animate={{opacity: 1, y: 0}}
                                                 exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
                                     <ServicesSection
                                         category={category}
@@ -230,7 +244,8 @@ export default function BookingPage() {
                                 </motion.section>
                             )}
                             {step === 2 && (
-                                <motion.section key={"step2"} initial={{opacity: 0, y: 8}} animate={{opacity: 1, y: 0}}
+                                <motion.section key={"step2"} initial={{opacity: 0, y: 8}}
+                                                animate={{opacity: 1, y: 0}}
                                                 exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
                                     <Professional
                                         items={selectedDetails}
@@ -247,7 +262,8 @@ export default function BookingPage() {
                                 </motion.section>
                             )}
                             {step === 3 && (
-                                <motion.section key="step3" initial={{opacity: 0, y: 8}} animate={{opacity: 1, y: 0}}
+                                <motion.section key="step3" initial={{opacity: 0, y: 8}}
+                                                animate={{opacity: 1, y: 0}}
                                                 exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
                                     <ScheduleSection
                                         days={next14Days}
@@ -265,12 +281,12 @@ export default function BookingPage() {
                                         setSelectedTime={(t) => setSelectedTime(t)}
                                         canContinue={canContinueFromSchedule}
                                         onBack={goBack}
-                                        onContinue={goNext}
+                                        onContinue={() => goToConfirm(waitlistActive)}
                                         waitlistActive={waitlistActive}
                                         setWaitlistActive={setWaitlistActive}
                                         waitlistEntries={waitlistEntries}
                                         onWaitlistChange={(index, patch) => {
-                                            setWaitlistEntries((prev) => prev.map((e, i) => i === index ? { ...e, ...patch } : e));
+                                            setWaitlistEntries((prev) => prev.map((e, i) => i === index ? {...e, ...patch} : e));
                                         }}
                                         onWaitlistAdd={() => setWaitlistEntries((prev) => [...prev, {}])}
                                         onWaitlistRemove={(index) => setWaitlistEntries((prev) => prev.filter((_, i) => i !== index))}
@@ -284,8 +300,20 @@ export default function BookingPage() {
                             )}
 
                             {step === 4 && (
-                                <motion.section key="step4" initial={{opacity: 0, y: 8}} animate={{opacity: 1, y: 0}}
-                                                exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
+                                fromWaitlist ? (
+                                    <WaitlistConfirm
+                                        items={selectedDetails}
+                                        durations={durations}
+                                        selectedDate={selectedDate}
+                                        selectedTime={selectedTime}
+                                        total={total}
+                                        onBack={goBack}
+                                        onConfirm={() => {
+                                            setIsSuccessful(true);
+                                        }}
+                                        waitlistEntries={waitlistEntries}
+                                    />
+                                ) : (
                                     <ReviewSection
                                         items={selectedDetails}
                                         durations={durations}
@@ -294,10 +322,10 @@ export default function BookingPage() {
                                         total={total}
                                         onBack={goBack}
                                         onConfirm={() => {
-                                            setIsSuccessful(true)
+                                            setIsSuccessful(true);
                                         }}
                                     />
-                                </motion.section>
+                                )
                             )}
                         </AnimatePresence>
                     </motion.main>
@@ -323,7 +351,8 @@ export default function BookingPage() {
                         waitlistEntries={waitlistEntries}
                     />
 
-                    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} professional={profileStylist}/>
+                    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
+                                   professional={profileStylist}/>
 
                 </div>
             </div>
