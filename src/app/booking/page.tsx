@@ -15,6 +15,7 @@ import type {SelectedItem, Step, SelectedProfessional, WaitlistEntry} from "@/co
 import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
 import SuccessPage from "@/components/Success";
+import ProfileDialog from "@/components/ProfileDialog";
 
 export default function BookingPage() {
     const [step, setStep] = useState<Step>(1);
@@ -31,6 +32,15 @@ export default function BookingPage() {
     const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{ }]);
 
     const [isSuccessful, setIsSuccessful] = useState(false);
+
+    const [profileOpen, setProfileOpen] = useState(false);
+    const [profileStylist, setProfileStylist] = useState<TStylist | null>(null);
+
+    const openProfile = (id: string) => {
+        const s = STYLISTS.find((x) => x.id === id) || null;
+        setProfileStylist(s);
+        setProfileOpen(true);
+    };
 
     const selectedDetails = useMemo(
         () =>
@@ -121,6 +131,43 @@ export default function BookingPage() {
         return [] as string[];
     },[professional])
 
+    const getSelectedStylistId = (serviceId: string) => {
+        if(!professional) return undefined;
+
+        if(serviceId) {
+            if(professional.mode === "perService") return (professional.map || {})[serviceId]
+            if(professional.mode === "stylist") return professional.stylistId;
+            return undefined;
+        }else {
+            return professional.mode === "stylist" ? professional.stylistId : undefined;
+        }
+    }
+
+    const handleSelectAny = (serviceId?: string) => {
+        if(!serviceId) {
+            setProfessional({mode: "any"})
+            return;
+        }
+        const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
+        const newMap = {...currentMap};
+        delete newMap[serviceId];
+        setProfessional({mode: "perService", map: newMap});
+    }
+
+    const handleSelectStylist = (stylistId: string, serviceId?: string) => {
+        if(!serviceId) {
+            setProfessional({mode: "stylist", stylistId})
+            return;
+        }
+        const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
+        const newMap = {...currentMap};
+        newMap[serviceId] = stylistId;
+    }
+
+    const handleViewProfile = (stylistId: string) => {
+        openProfile(stylistId);
+    }
+
 
     if (isSuccessful) {
         return (
@@ -173,6 +220,10 @@ export default function BookingPage() {
                                         professional={professional}
                                         setProfessional={setProfessional}
                                         onContinue={goNext}
+                                        getSelectedStylistId={getSelectedStylistId}
+                                        onSelectAnyForService={handleSelectAny}
+                                        onSelectStylistForService={handleSelectStylist}
+                                        onViewProfile={handleViewProfile}
                                     />
                                 </motion.section>
                             )}
@@ -204,6 +255,9 @@ export default function BookingPage() {
                                         onWaitlistAdd={() => setWaitlistEntries((prev) => [...prev, {}])}
                                         onWaitlistRemove={(index) => setWaitlistEntries((prev) => prev.filter((_, i) => i !== index))}
                                         canContinueWaitlist={waitlistEntries.some((e) => !!e.date)}
+                                        onSelectAny={() => handleSelectAny()}
+                                        onSelectStylist={(id) => handleSelectStylist(id)}
+                                        onViewProfile={handleViewProfile}
                                     />
                                 </motion.section>
                             )}
@@ -247,6 +301,8 @@ export default function BookingPage() {
                         waitlistActive={waitlistActive}
                         waitlistEntries={waitlistEntries}
                     />
+
+                    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} professional={profileStylist}/>
 
                 </div>
             </div>

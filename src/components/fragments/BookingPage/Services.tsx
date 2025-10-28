@@ -59,9 +59,9 @@ export default function Services({
 
             <CategoryChips category={category} setCategory={setCategory}/>
 
-            <ScrollArea className={"mt-4 max-h-[400px] sm:max-h-[500px] lg:max-h-[600px] xl:max-h-[700px]"}>
+            <ScrollArea className={"mt-4"}>
                 <motion.div key={category} variants={container} initial="hidden" animate="show"
-                            className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[500px]">
                     {filtered.map((s) => {
                         const openDialog = () => {
                             setDialogService(s);
