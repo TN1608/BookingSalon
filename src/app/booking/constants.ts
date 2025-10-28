@@ -1,4 +1,3 @@
-// Strong typing for booking constants
 import {useState} from "react";
 import {Star} from "lucide-react";
 
@@ -47,7 +46,8 @@ export interface Stylist {
         rating: number
         text: string
         avatar: string
-    }[]
+    }[],
+    unavailableDates?: string[]
 }
 
 export interface Package {
@@ -59,10 +59,13 @@ export interface Package {
 }
 
 const CATEGORIES: Category[] = [
-    {id: "haircuts", name: "Haircuts"},
-    {id: "coloring", name: "Coloring"},
-    {id: "styling", name: "Styling"},
-    {id: "children", name: "Children"},
+    { id: "haircuts", name: "Haircuts" },
+    { id: "coloring", name: "Coloring" },
+    { id: "styling", name: "Styling" },
+    { id: "children", name: "Children" },
+    { id: "treatments", name: "Hair Treatments" },
+    { id: "nails", name: "Nail Services" },
+    { id: "makeup", name: "Makeup" },
 ]
 
 const SERVICES: Service[] = [
@@ -73,9 +76,9 @@ const SERVICES: Service[] = [
         basePrice: 150,
         desc: "Include hair wash. Extra charge for extra long & thick hair.",
         variants: [
-            {id: "short-hair", name: "Short", duration: "30 mins", price: 150},
-            {id: "medium-hair", name: "Medium", duration: "45 mins", price: 200},
-            {id: "long-hair", name: "Long", duration: "1 hr", price: 250},
+            { id: "short-hair", name: "Short", duration: "30 mins", price: 150 },
+            { id: "medium-hair", name: "Medium", duration: "45 mins", price: 200 },
+            { id: "long-hair", name: "Long", duration: "1 hr", price: 250 },
         ],
         categoryId: "haircuts",
     },
@@ -86,8 +89,8 @@ const SERVICES: Service[] = [
         basePrice: 80,
         desc: "Classic and modern men's cuts. Includes quick styling.",
         variants: [
-            {id: "basic-mens", name: "Basic", duration: "20 mins", price: 80},
-            {id: "styled-mens", name: "Styled", duration: "40 mins", price: 120},
+            { id: "basic-mens", name: "Basic", duration: "20 mins", price: 80 },
+            { id: "styled-mens", name: "Styled", duration: "40 mins", price: 120 },
         ],
         categoryId: "haircuts",
     },
@@ -98,8 +101,8 @@ const SERVICES: Service[] = [
         basePrice: 60,
         desc: "For children under 12. Parent supervision required.",
         variants: [
-            {id: "kids-short", name: "Short", duration: "20 mins", price: 60},
-            {id: "kids-long", name: "Long", duration: "30 mins", price: 80},
+            { id: "kids-short", name: "Short", duration: "20 mins", price: 60 },
+            { id: "kids-long", name: "Long", duration: "30 mins", price: 80 },
         ],
         categoryId: "children",
     },
@@ -110,8 +113,8 @@ const SERVICES: Service[] = [
         basePrice: 300,
         desc: "Full color services including consultation and conditioning treatment.",
         variants: [
-            {id: "partial-color", name: "Partial", duration: "1.5 hrs", price: 200},
-            {id: "full-color-variant", name: "Full", duration: "3 hrs", price: 350},
+            { id: "partial-color", name: "Partial", duration: "1.5 hrs", price: 200 },
+            { id: "full-color-variant", name: "Full", duration: "3 hrs", price: 350 },
         ],
         categoryId: "coloring",
     },
@@ -122,10 +125,82 @@ const SERVICES: Service[] = [
         basePrice: 100,
         desc: "Wash, blow-dry and style for special occasions or everyday look.",
         variants: [
-            {id: "quick-blowout", name: "Quick", duration: "45 mins", price: 100},
-            {id: "deluxe-blowout", name: "Deluxe", duration: "1 hr", price: 140},
+            { id: "quick-blowout", name: "Quick", duration: "45 mins", price: 100 },
+            { id: "deluxe-blowout", name: "Deluxe", duration: "1 hr", price: 140 },
         ],
         categoryId: "styling",
+    },
+    {
+        id: "keratin-treatment",
+        name: "Keratin Treatment",
+        duration: "2 - 3 hrs",
+        basePrice: 400,
+        desc: "Smooths and straightens hair with a nourishing keratin formula.",
+        variants: [
+            { id: "short-keratin", name: "Short Hair", duration: "2 hrs", price: 400 },
+            { id: "long-keratin", name: "Long Hair", duration: "3 hrs", price: 500 },
+        ],
+        categoryId: "treatments",
+    },
+    {
+        id: "scalp-treatment",
+        name: "Scalp Treatment",
+        duration: "45 mins - 1 hr",
+        basePrice: 120,
+        desc: "Deep cleansing and nourishing treatment for healthy scalp and hair.",
+        variants: [
+            { id: "basic-scalp", name: "Basic", duration: "45 mins", price: 120 },
+            { id: "intensive-scalp", name: "Intensive", duration: "1 hr", price: 160 },
+        ],
+        categoryId: "treatments",
+    },
+    {
+        id: "manicure",
+        name: "Manicure",
+        duration: "30 - 45 mins",
+        basePrice: 50,
+        desc: "Nail shaping, cuticle care, and polish application.",
+        variants: [
+            { id: "classic-manicure", name: "Classic", duration: "30 mins", price: 50 },
+            { id: "gel-manicure", name: "Gel", duration: "45 mins", price: 70 },
+        ],
+        categoryId: "nails",
+    },
+    {
+        id: "pedicure",
+        name: "Pedicure",
+        duration: "45 mins - 1 hr",
+        basePrice: 60,
+        desc: "Foot soak, exfoliation, nail care, and polish.",
+        variants: [
+            { id: "classic-pedicure", name: "Classic", duration: "45 mins", price: 60 },
+            { id: "spa-pedicure", name: "Spa", duration: "1 hr", price: 80 },
+        ],
+        categoryId: "nails",
+    },
+    {
+        id: "bridal-makeup",
+        name: "Bridal Makeup",
+        duration: "1.5 - 2 hrs",
+        basePrice: 250,
+        desc: "Customized makeup application for brides, including trial session.",
+        variants: [
+            { id: "natural-bridal", name: "Natural Look", duration: "1.5 hrs", price: 250 },
+            { id: "glam-bridal", name: "Glam Look", duration: "2 hrs", price: 300 },
+        ],
+        categoryId: "makeup",
+    },
+    {
+        id: "event-makeup",
+        name: "Event Makeup",
+        duration: "1 - 1.5 hrs",
+        basePrice: 150,
+        desc: "Makeup for special events, tailored to your style.",
+        variants: [
+            { id: "soft-event", name: "Soft Look", duration: "1 hr", price: 150 },
+            { id: "bold-event", name: "Bold Look", duration: "1.5 hrs", price: 200 },
+        ],
+        categoryId: "makeup",
     },
 ]
 
@@ -133,7 +208,7 @@ const STYLISTS: Stylist[] = [
     {
         id: "stylist-anna",
         name: "Fatin",
-        specialties: ["women-haircut", "full-color", "blowout"],
+        specialties: ["women-haircut", "full-color", "blowout", "keratin-treatment", "bridal-makeup"],
         level: "senior",
         hourlyRate: 70,
         roleTitle: "Senior Stylist",
@@ -143,7 +218,7 @@ const STYLISTS: Stylist[] = [
         clientsServed: 105,
         languages: ["English"],
         avatarUrl: "/avatars/fatin.jpg",
-        bio: "Expert in women’s cuts, color transformations, and premium blowouts.",
+        bio: "Expert in women’s cuts, color transformations, premium blowouts, keratin treatments, and bridal makeup.",
         portfolio: [],
         reviews: [
             {
@@ -210,12 +285,18 @@ const STYLISTS: Stylist[] = [
                 text: "I've been searching for a stylist who gets my vision — Fatin nailed it on the first try! Already booked my next visit.",
                 avatar: "https://images.unsplash.com/photo-1509967419530-da38b4708bc6?w=96&h=96&fit=crop",
             },
+        ],
+        unavailableDates: [
+            "2025-10-30",
+            "2025-11-02",
+            "2025-11-09",
+            "2025-11-15",
         ]
     },
     {
         id: "stylist-mike",
         name: "Mike",
-        specialties: ["mens-haircut", "styling"],
+        specialties: ["mens-haircut", "styling", "scalp-treatment"],
         level: "mid",
         hourlyRate: 50,
         roleTitle: "Stylist",
@@ -225,7 +306,7 @@ const STYLISTS: Stylist[] = [
         clientsServed: 180,
         languages: ["English"],
         avatarUrl: "/avatars/mike.jpg",
-        bio: "Modern men’s styles, fades and event styling.",
+        bio: "Modern men’s styles, fades, event styling, and scalp treatments.",
         portfolio: [],
         reviews: [
             {
@@ -284,12 +365,20 @@ const STYLISTS: Stylist[] = [
                 text: "Solid haircut, good attention to detail. A little pricey for a basic trim, but quality is there.",
                 avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=96&h=96&fit=crop",
             },
+        ],
+        unavailableDates: [
+            "2025-10-29",
+            "2025-11-01",
+            "2025-11-03",
+            "2025-11-07",
+            "2025-11-10",
+            "2025-11-16",
         ]
     },
     {
         id: "stylist-lee",
         name: "Lee",
-        specialties: ["kids-haircut", "blowout"],
+        specialties: ["kids-haircut", "blowout", "manicure", "pedicure", "event-makeup"],
         level: "junior",
         hourlyRate: 40,
         roleTitle: "Junior Stylist",
@@ -299,7 +388,7 @@ const STYLISTS: Stylist[] = [
         clientsServed: 90,
         languages: ["English"],
         avatarUrl: "/avatars/lee.jpg",
-        bio: "Patient with kids, loves playful looks and soft waves.",
+        bio: "Patient with kids, loves playful looks, soft waves, nail services, and event makeup.",
         portfolio: [],
         reviews: [
             {
@@ -350,6 +439,15 @@ const STYLISTS: Stylist[] = [
                 text: "My toddler usually cries during haircuts, but Lee was so calm and engaging — no tears! Magic!",
                 avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=96&h=96&fit=crop",
             },
+        ],
+        unavailableDates: [
+            "2025-10-31",
+            "2025-11-04",
+            "2025-11-05",
+            "2025-11-11",
+            "2025-11-12",
+            "2025-11-17",
+            "2025-11-18",
         ]
     },
 ]
@@ -370,7 +468,6 @@ const PACKAGES: Package[] = [
         includes: ["blowout", "deep-conditioning", "mini-style"],
     },
 ]
-
 
 export type {Category as TCategory, Variant as TVariant, Service as TService, Stylist as TStylist, Package as TPackage}
 export {CATEGORIES, SERVICES, STYLISTS, PACKAGES}

@@ -99,6 +99,29 @@ export default function BookingPage() {
     const goNext = () => setStep((s) => (s === 1 ? 2 : s === 2 ? 3 : s === 3 ? 4 : 4));
     const goBack = () => setStep((s) => (s === 4 ? 3 : s === 3 ? 2 : 1));
 
+    const unAvailableDates = useMemo(() => {
+        if(!professional) return [] as string[];
+
+        if(professional.mode === "stylist") {
+            const stylist = STYLISTS.find((s) => s.id === professional.stylistId);
+            if(!stylist) return [] as string[];
+            return stylist.unavailableDates;
+        }
+
+        if(professional.mode === "perService") {
+            const stylistIds = Object.values(professional.map || {});
+            const dates = new Set<string>();
+            stylistIds.forEach((id) => {
+                const st = STYLISTS.find((s) => s.id === id)
+                st?.unavailableDates?.forEach((d) => dates.add(d))
+            })
+            return Array.from(dates);
+        }
+
+        return [] as string[];
+    },[professional])
+
+
     if (isSuccessful) {
         return (
             <motion.div
@@ -158,12 +181,15 @@ export default function BookingPage() {
                                                 exit={{opacity: 0, y: -8}} transition={{duration: 0.25}}>
                                     <ScheduleSection
                                         days={next14Days}
+                                        unavailableDates={unAvailableDates}
+                                        selectedStylistId={professional?.mode === "stylist" ? professional.stylistId : undefined}
                                         timeSlots={timeSlots}
                                         selectedDate={selectedDate}
                                         setSelectedDate={(k) => {
                                             setSelectedDate(k);
                                             setSelectedTime(null);
                                         }}
+                                        stylists={STYLISTS}
                                         selectedTime={selectedTime}
                                         setSelectedTime={(t) => setSelectedTime(t)}
                                         canContinue={canContinueFromSchedule}

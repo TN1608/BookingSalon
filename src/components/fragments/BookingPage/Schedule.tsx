@@ -1,10 +1,13 @@
 "use client"
 import {motion} from "framer-motion";
 import {Button} from "@/components/ui/button";
+import {useState} from "react";
 import {container, fade} from "../../../types/types";
 import {ScrollArea, ScrollBar} from "@/components/ui/scroll-area";
 import WaitlistPage from "@/components/fragments/BookingPage/WaitlistPage";
 import type {WaitlistEntry} from "@/components/fragments/BookingPage";
+import type {TStylist} from "../../../types/types";
+import {ServiceProDialog} from "@/components/ServiceProDialog";
 
 interface DayItem {
     key: string;
@@ -29,6 +32,14 @@ interface ScheduleProps {
     onWaitlistAdd: () => void;
     onWaitlistRemove: (index: number) => void;
     canContinueWaitlist: boolean;
+    // Unavailable + professionals
+    unavailableDates?: string[];
+    nextAvailableMap?: Record<string, string>; // map from unavailable date key to next available date key
+    stylists?: TStylist[];
+    selectedStylistId?: string; // currently chosen stylist (if any)
+    onSelectAny?: () => void;
+    onSelectStylist?: (id: string) => void;
+    onViewProfile?: (id: string) => void;
 }
 
 export default function Schedule({
@@ -48,9 +59,20 @@ export default function Schedule({
                                      onWaitlistAdd,
                                      onWaitlistRemove,
                                      canContinueWaitlist,
+                                     unavailableDates = [],
+                                     nextAvailableMap = {},
+                                     stylists = [],
+                                     selectedStylistId,
+                                     onSelectAny,
+                                     onSelectStylist,
+                                     onViewProfile,
                                  }: ScheduleProps) {
 
-    if(waitlistActive) {
+    const [proDialogOpen, setProDialogOpen] = useState(false);
+
+    const isUnavailable = (key: string) => unavailableDates.includes(key);
+
+    if (waitlistActive) {
         return (
             <WaitlistPage
                 entries={waitlistEntries}
@@ -66,63 +88,160 @@ export default function Schedule({
 
 
     return (
-        <section>
+        <section className={"min-h-screen"}>
             <h2 className="text-2xl font-semibold">Choose date & time</h2>
 
-            <ScrollArea className="mt-4">
-                <div className="flex gap-3 min-w-max pr-2">
+            <ScrollArea className="mt-6 p-4 border rounded-2xl">
+                <div className="flex gap-3 min-w-max p-2">
                     {days.map((d) => {
                         const active = selectedDate === d.key;
+                        const isDisable = isUnavailable(d.key);
+
+                        // derive day number + weekday from the ISO key
+                        const dateObj = new Date(d.key);
+                        const dayNum = String(dateObj.getDate());
+                        const weekday = dateObj.toLocaleDateString(undefined, {weekday: "short"});
+
                         return (
-                            <motion.button
+                            <motion.div
                                 key={d.key}
-                                whileHover={{y: -2}}
-                                whileTap={{scale: 0.98}}
-                                onClick={() => {
-                                    setSelectedDate(d.key);
-                                    if (selectedTime) setSelectedTime("");
-                                }}
-                                className={`px-4 py-2 rounded-full text-sm border whitespace-nowrap ${
-                                    active
-                                        ? "bg-rose-500 text-white border-rose-500"
-                                        : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                                }`}
+                                className="flex flex-col items-center"
+                                whileHover={!isDisable ? {y: -2} : undefined}
+                                whileTap={!isDisable ? {scale: 0.95} : undefined}
                             >
-                                {d.label}
-                            </motion.button>
+                                <button
+                                    // clickable even when unavailable so banner will show
+                                    onClick={() => {
+                                        setSelectedDate(d.key);
+                                        setSelectedTime("");
+                                    }}
+                                    aria-disabled={isDisable}
+                                    className={`
+                                        w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold
+                                        transition-all duration-200 relative
+                                        ${isDisable
+                                        ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 cursor-pointer"
+                                        : active
+                                            ? "bg-violet-600 text-white shadow-lg ring-4 ring-violet-600/30"
+                                            : "bg-white text-gray-900 border border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                    }
+                                    `}
+                                >
+                                    {dayNum}
+                                    {isDisable && !active && (
+                                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-rose-500"/>
+                                    )}
+                                </button>
+
+                                <span
+                                    className={`
+                                        mt-1 text-xs font-medium
+                                        ${active
+                                        ? "text-violet-600 dark:text-violet-400"
+                                        : isDisable
+                                            ? "text-gray-400 dark:text-gray-600"
+                                            : "text-gray-600 dark:text-gray-400"
+                                    }
+                                    `}
+                                >
+                                    {weekday}
+                                </span>
+                            </motion.div>
                         );
                     })}
                 </div>
                 <ScrollBar orientation="horizontal"/>
             </ScrollArea>
 
-            <motion.div variants={container} initial="hidden" animate="show"
-                        className="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {timeSlots.map((t) => {
-                    const disabled = false; // hook up availability later
-                    const active = selectedTime === t;
+            {/* Unavailable date banner or time slots */}
+            {(() => {
+                const isUnavailable = !!selectedDate && unavailableDates.includes(selectedDate);
+                if (isUnavailable) {
+                    const nextKey = selectedDate ? nextAvailableMap[selectedDate] : undefined;
+                    const nextLabel = nextKey ? (days.find(d => d.key === nextKey)?.label || nextKey) : undefined;
                     return (
-                        <motion.button
-                            key={t}
-                            variants={fade}
-                            whileHover={!disabled ? {scale: 1.02} : undefined}
-                            whileTap={!disabled ? {scale: 0.98} : undefined}
-                            disabled={disabled}
-                            onClick={() => setSelectedTime(t)}
-                            className={`px-3 py-2 rounded-lg border text-sm ${
-                                active
-                                    ? "bg-rose-500 text-white border-rose-500"
-                                    : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                            } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-                        >
-                            {t}
-                        </motion.button>
+                        <div
+                            className="mt-6 border rounded-2xl p-8 sm:p-10 bg-white/60 dark:bg-neutral-900/60 border-zinc-200 dark:border-zinc-800">
+                            <div className="flex flex-col items-center text-center gap-4">
+                                {(() => {
+                                    const selectedStylist = stylists?.find(s => s.id === selectedStylistId);
+                                    const initials = selectedStylist?.name ? selectedStylist.name.slice(0, 1) : "PRO";
+                                    return (
+                                        <div
+                                            className="h-14 w-14 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden grid place-items-center text-sm font-semibold">
+                                            {initials}
+                                        </div>
+                                    );
+                                })()}
+                                <div>
+                                    {(() => {
+                                        const selectedStylist = stylists?.find(s => s.id === selectedStylistId);
+                                        const name = selectedStylist?.name;
+                                        return (
+                                            <div
+                                                className="text-xl sm:text-2xl font-semibold">{name ? `${name} is fully booked on this date` : "Fully booked on this date"}</div>
+                                        );
+                                    })()}
+                                    {nextLabel && (
+                                        <div className="text-sm text-muted-foreground mt-1">Available
+                                            from {nextLabel}</div>
+                                    )}
+                                </div>
+                                <div className="flex gap-3 mt-2 flex-wrap justify-center">
+                                    {nextKey && (
+                                        <Button variant="outline" onClick={() => setSelectedDate(nextKey)}>Go to next
+                                            available date</Button>
+                                    )}
+                                    <Button variant="outline" onClick={() => setProDialogOpen(true)}>Check all
+                                        professionals</Button>
+                                </div>
+                                <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800 my-6"/>
+                                <p className="text-sm text-muted-foreground">You can <span
+                                    className="text-primary font-semibold transition hover:underline cursor-pointer"
+                                    onClick={() => {
+                                        setWaitlistActive(true)
+                                    }}>join the waitlist</span> instead</p>
+                            </div>
+                        </div>
                     );
-                })}
-            </motion.div>
-            <div className={"flex justify-center "}>
-                <p className={"text-sm text-muted-foreground mt-2"}>Can’t find a suitable time? <span className={"text-primary font-semibold transition hover:underline cursor-pointer"} onClick={() => {setWaitlistActive(true)}}>Join waitlist</span> </p>
-            </div>
+                }
+                // else show time slots
+                return (
+                    <>
+                        <motion.div variants={container} initial="hidden" animate="show"
+                                    className="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                            {timeSlots.map((t) => {
+                                const disabled = false; // hook up availability later
+                                const active = selectedTime === t;
+                                return (
+                                    <motion.button
+                                        key={t}
+                                        variants={fade}
+                                        whileHover={!disabled ? {scale: 1.02} : undefined}
+                                        whileTap={!disabled ? {scale: 0.98} : undefined}
+                                        disabled={disabled}
+                                        onClick={() => setSelectedTime(t)}
+                                        className={`px-3 py-2 rounded-lg border text-sm ${
+                                            active
+                                                ? "bg-rose-500 text-white border-rose-500"
+                                                : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                        } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                                    >
+                                        {t}
+                                    </motion.button>
+                                );
+                            })}
+                        </motion.div>
+                        <div className={"flex justify-center "}>
+                            <p className={"text-sm text-muted-foreground mt-2"}>Can’t find a suitable time? <span
+                                className={"text-primary font-semibold transition hover:underline cursor-pointer"}
+                                onClick={() => {
+                                    setWaitlistActive(true)
+                                }}>Join waitlist</span></p>
+                        </div>
+                    </>
+                );
+            })()}
 
             <div className="mt-6 flex items-center justify-between">
                 <Button variant="outline" onClick={onBack}>
@@ -132,6 +251,25 @@ export default function Schedule({
                     Continue
                 </Button>
             </div>
+
+            <ServiceProDialog
+                open={proDialogOpen}
+                onOpenChange={setProDialogOpen}
+                title="Select professional"
+                stylists={stylists}
+                selectedStylistId={selectedStylistId}
+                onSelectAny={() => {
+                    onSelectAny && onSelectAny();
+                    setProDialogOpen(false);
+                }}
+                onSelectStylist={(id) => {
+                    onSelectStylist && onSelectStylist(id);
+                    setProDialogOpen(false);
+                }}
+                onViewProfile={(id) => {
+                    onViewProfile && onViewProfile(id);
+                }}
+            />
         </section>
     );
 }
