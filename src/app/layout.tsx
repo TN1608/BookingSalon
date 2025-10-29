@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import {Toaster} from "@/components/ui/sonner";
 import {ThemeProvider} from "@/components/theme-provider";
 import {Suspense} from "react";
+import {AuthProvider} from "@/context/AuthProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -32,20 +33,22 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-            <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-            >
-                <div className={"flex min-h-screen flex-col"}>
-                    <Navbar/>
-                    <Toaster/>
-                    <main className={"flex-grow"}>
-                        {children}
-                    </main>
-                </div>
-            </ThemeProvider>
+                <AuthProvider>
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="system"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        <div className={"flex min-h-screen flex-col"}>
+                            <Navbar/>
+                            <Toaster/>
+                            <main className={"flex-grow"}>
+                                {children}
+                            </main>
+                        </div>
+                    </ThemeProvider>
+                </AuthProvider>
             </body>
         </Suspense>
         </html>

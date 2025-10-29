@@ -1,3 +1,4 @@
+"use client"
 import {FaCheckCircle} from "react-icons/fa";
 import {Button} from "@/components/ui/button";
 import {useEffect} from "react";

@@ -1,38 +1,70 @@
 "use client"
-import {ReactNode, useEffect, useState} from "react";
+import {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 
 
 interface User {
     fullName: string;
     email?: string;
-    password: string;
-    role: string;
 }
 
 interface AuthContextType {
     user: User | null;
-    setUser: (user: User | null) => void;
-    login: (identifier: string, password: string) => Promise<void>;
-    register: (
-        username: string,
-        email: string,
-        password: string,
-        fullName: string,
-    ) => Promise<void>;
-    logout: () => Promise<void>;
-    fetchUser: () => Promise<void>;
-    refreshToken: () => Promise<void>;
-    isLoading: boolean;
+    login: (user: User, remember?: boolean) => void;
+    logout: () => void;
+    showLogin: boolean;
+    setShowLogin: (v: boolean) => void;
 }
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export default function AuthProvider({children}: { children: ReactNode }) {
+export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
     const [user, setUser] = useState<User | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
+    const [showLogin, setShowLogin] = useState(false);
 
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (raw) setUser(JSON.parse(raw));
+        } catch (e) {
+            setUser(null);
+        }
+    }, []);
 
-    const login = async (identifier: string, password: string) => {
+    const login = (u: User, remember = false) => {
+        try {
+            if (remember) {
+                localStorage.setItem("user", JSON.stringify(u));
+                localStorage.setItem("rememberMe", "true");
+                sessionStorage.removeItem("user");
+            } else {
+                sessionStorage.setItem("user", JSON.stringify(u));
+                localStorage.removeItem("user");
+                localStorage.removeItem("rememberMe");
+            }
+            setUser(u);
+            setShowLogin(false);
+        } catch (e) {
+            // silent
+        }
+    };
 
-    }
+    const logout = () => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("rememberMe");
+        sessionStorage.removeItem("user");
+        setUser(null);
+    };
+
+    return (
+        <AuthContext.Provider value={{user, login, logout, showLogin, setShowLogin}}>
+            {children}
+        </AuthContext.Provider>
+    );
+};
+
+export const useAuth = (): AuthContextType => {
+    const ctx = useContext(AuthContext);
+    if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+    return ctx;
 }

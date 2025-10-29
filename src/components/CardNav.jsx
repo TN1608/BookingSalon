@@ -5,6 +5,7 @@ import {gsap} from 'gsap';
 import {GoArrowUpRight} from 'react-icons/go';
 import {Button} from "@/components/ui/button";
 import Link from "next/link";
+import {useAuth} from "@/context/AuthProvider";
 
 const CardNav = ({
                      logo,
@@ -18,6 +19,8 @@ const CardNav = ({
                      buttonTextColor,
                      buttonText
                  }) => {
+    const {user, logout, setShowLogin} = useAuth();
+
     const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const navRef = useRef(null);
@@ -174,15 +177,35 @@ const CardNav = ({
                         </div>
                     </Link>
 
-                    <Link href={"/booking"}>
-                        <Button
-                            variant="default"
-                            className="card-nav-cta-button hidden md:inline-flex border-0 rounded-full px-4 h-full font-medium cursor-pointer transition-colors duration-300"
-                            style={{backgroundColor: buttonBgColor, color: buttonTextColor}}
-                        >
-                            {buttonText}
-                        </Button>
-                    </Link>
+                    <div className="nav-actions flex items-center gap-4 order-3 md:order-none">
+                        {user ? (
+                            <div className={"flex items-center gap-2"}>
+                                            <span
+                                                className="hidden md:inline-block text-sm text-muted-foreground">Welcome, {user.fullName}</span>
+                                <Button onClick={logout} variant="default"
+                                        className="card-nav-cta-button hidden md:inline-flex border-accent border bg-white rounded-full px-4 h-full font-medium cursor-pointer transition-colors duration-300"
+
+                                >
+                                    Sign out
+                                </Button>
+                                <Link href={"/booking"}>
+                                    <Button variant="default"
+                                            className="card-nav-cta-button hidden md:inline-flex border-0 rounded-full px-4 h-full font-medium cursor-pointer transition-colors duration-300"
+                                            style={{backgroundColor: buttonBgColor, color: buttonTextColor}}>
+                                        {buttonText}
+                                    </Button>
+                                </Link>
+                            </div>
+                        ) : (
+                            <Link href={"/booking"}>
+                                <Button variant="default"
+                                        className="card-nav-cta-button hidden md:inline-flex border-0 rounded-full px-4 h-full font-medium cursor-pointer transition-colors duration-300"
+                                        style={{backgroundColor: buttonBgColor, color: buttonTextColor}}>
+                                    {buttonText}
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 <div

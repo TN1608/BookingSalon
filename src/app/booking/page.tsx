@@ -14,11 +14,15 @@ import {
 import type {SelectedItem, Step, SelectedProfessional, WaitlistEntry} from "@/components/fragments/BookingPage";
 import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
-import SuccessPage from "@/components/Success";
 import ProfileDialog from "@/components/ProfileDialog";
 import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm";
+import LoginDialog from "@/components/LoginDialog";
+import {useAuth} from "@/context/AuthProvider";
+import SuccessPage from "@/app/success/page";
 
 export default function BookingPage() {
+    const {showLogin, setShowLogin, user} = useAuth();
+
     const [step, setStep] = useState<Step>(1);
     const [selected, setSelected] = useState<SelectedItem[]>([]);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -232,17 +236,12 @@ export default function BookingPage() {
         setFromWaitlist(false)
     }
 
-    if (isSuccessful) {
-        return (
-            <motion.div
-                initial={{opacity: 0, y: 8}}
-                animate={{opacity: 1, y: 0}}
-                exit={{opacity: 0, y: -8}}
-                transition={{duration: 0.25}}>
-                <SuccessPage/>
-            </motion.div>
-        );
+    const handleBookSuccess = () => {
+        window.location.href = "/success"
     }
+
+
+
     return (
         <div
             className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 lg:py-32 lg:px-18">
@@ -352,9 +351,7 @@ export default function BookingPage() {
                                         selectedTime={selectedTime}
                                         total={total}
                                         onBack={goBack}
-                                        onConfirm={() => {
-                                            setIsSuccessful(true);
-                                        }}
+                                        onConfirm={handleBookSuccess}
                                     />
                                 )
                             )}
@@ -384,6 +381,10 @@ export default function BookingPage() {
 
                     <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
                                    professional={profileStylist}/>
+
+                    {!user && (
+                        <LoginDialog openLogin={showLogin} onOpenChange={setShowLogin} />
+                    )}
 
                 </div>
             </div>
