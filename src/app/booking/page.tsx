@@ -44,6 +44,36 @@ export default function BookingPage() {
         setProfileOpen(true);
     };
 
+    const hasDuplicate = (arr: SelectedItem[]) => {
+        const seen = new Set<string>()
+        for (const it of arr) {
+            const key = `${it.serviceId}||${it.variantId}`;
+            if (seen.has(key)) return true
+            seen.add(key)
+        }
+        return false
+    }
+
+    const handleSetSelected =(value: SelectedItem[] | ((prev: SelectedItem[]) => SelectedItem[])) => {
+        if (typeof value === "function") {
+            setSelected((prev) => {
+                const next = (value as (p: SelectedItem[]) => SelectedItem[])(prev);
+                if (hasDuplicate(next)) {
+                    toast.error("You already selected this exact service variant.");
+                    return prev;
+                }
+                return next;
+            });
+        } else {
+            if (hasDuplicate(value)) {
+                toast.error("You already selected this exact service variant.");
+                return;
+            }
+            setSelected(value);
+        }
+    }
+
+
     const selectedDetails = useMemo(
         () =>
             selected
@@ -174,6 +204,7 @@ export default function BookingPage() {
         const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
         const newMap = {...currentMap};
         newMap[serviceId] = stylistId;
+        setProfessional({mode: "perService", map: newMap});
     }
 
     const handleViewProfile = (stylistId: string) => {
@@ -231,7 +262,7 @@ export default function BookingPage() {
                                         setCategory={setCategory}
                                         services={SERVICE_DATA}
                                         selected={selected}
-                                        setSelected={setSelected}
+                                        setSelected={handleSetSelected}
                                         durations={durations}
                                         total={total}
                                         onClear={() => setSelected([])}

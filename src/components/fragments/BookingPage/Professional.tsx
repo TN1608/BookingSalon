@@ -18,7 +18,7 @@ interface ProfessionalProps {
     onBack?: () => void;
     getSelectedStylistId: (serviceId: string) => string | undefined;
     onSelectAnyForService: (serviceId: string) => void;
-    onSelectStylistForService: (serviceId: string, stylistId: string) => void;
+    onSelectStylistForService: (stylistId: string, serviceId: string) => void;
     onViewProfile: (id: string) => void;
 }
 
