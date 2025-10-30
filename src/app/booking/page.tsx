@@ -47,6 +47,8 @@ export default function BookingPage() {
         setProfileOpen(true);
     };
 
+    const makeKey = (serviceId: string, variantId?: string) => variantId ? `${serviceId}||${variantId}` : `${serviceId}||*`;
+
     const hasDuplicate = (arr: SelectedItem[]) => {
         const seen = new Set<string>()
         for (const it of arr) {
@@ -176,11 +178,16 @@ export default function BookingPage() {
         return [] as string[];
     }, [professional])
 
-    const getSelectedStylistId = (serviceId: string) => {
+    const getSelectedStylistId = (serviceId: string, variantId: string) => {
         if (!professional) return undefined;
 
         if (serviceId) {
-            if (professional.mode === "perService") return (professional.map || {})[serviceId]
+            if (professional.mode === "perService") {
+                const map = professional.map || {};
+                if (variantId) {
+                    return map[makeKey(serviceId, variantId) ?? map[makeKey(serviceId)]];
+                }
+            }
             if (professional.mode === "stylist") return professional.stylistId;
             return undefined;
         } else {
@@ -188,25 +195,38 @@ export default function BookingPage() {
         }
     }
 
-    const handleSelectAny = (serviceId?: string) => {
+    const handleSelectAny = (serviceId?: string, variantId?: string) => {
         if (!serviceId) {
             setProfessional({mode: "any"})
             return;
         }
         const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
         const newMap = {...currentMap};
-        delete newMap[serviceId];
+        if(variantId) {
+            delete newMap[makeKey(serviceId, variantId)];
+        }else {
+            Object.keys(newMap).forEach(k => {
+                if(k.startsWith(serviceId)) {
+                    delete newMap[k]
+                }
+            })
+        }
+
         setProfessional({mode: "perService", map: newMap});
     }
 
-    const handleSelectStylist = (stylistId: string, serviceId?: string) => {
+    const handleSelectStylist = (stylistId: string, serviceId?: string, variantId?: string) => {
         if (!serviceId) {
             setProfessional({mode: "stylist", stylistId})
             return;
         }
         const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
         const newMap = {...currentMap};
-        newMap[serviceId] = stylistId;
+        if(variantId) {
+            newMap[makeKey(serviceId,variantId)] = stylistId;
+        }else {
+            newMap[makeKey(serviceId)] = stylistId;
+        }
         setProfessional({mode: "perService", map: newMap});
     }
 
@@ -373,15 +393,16 @@ export default function BookingPage() {
                                 setShowLogin(true)
                             } else {
                                 window.location.href = "/success"
-                            }}}
-                            professional={professional}
-                            stylists={STYLISTS}
-                            waitlistActive={waitlistActive}
-                            waitlistEntries={waitlistEntries}
-                            />
+                            }
+                        }}
+                        professional={professional}
+                        stylists={STYLISTS}
+                        waitlistActive={waitlistActive}
+                        waitlistEntries={waitlistEntries}
+                    />
 
-                            <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
-                        professional={profileStylist}/>
+                    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
+                                   professional={profileStylist}/>
 
                     <LoginDialog openLogin={showLogin} onOpenChange={setShowLogin}/>
 

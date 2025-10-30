@@ -16,9 +16,9 @@ interface ProfessionalProps {
     isAbove: boolean;
     onContinue: () => void;
     onBack?: () => void;
-    getSelectedStylistId: (serviceId: string) => string | undefined;
-    onSelectAnyForService: (serviceId: string) => void;
-    onSelectStylistForService: (stylistId: string, serviceId: string) => void;
+    getSelectedStylistId: (serviceId: string, variantId: string) => string | undefined;
+    onSelectAnyForService: (serviceId: string, variantId?: string) => void;
+    onSelectStylistForService: (stylistId: string, serviceId: string, variantId?: string) => void;
     onViewProfile: (id: string) => void;
 }
 
@@ -43,31 +43,38 @@ export default function Professional({
 
     const [selectProPerService, setSelectProPerService] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [activeServiceId, setActiveServiceId] = useState<string | null>(null);
+    const [activeKey, setActiveKey] = useState<string | null>(null);
 
-    const getSelectionLabel = (serviceId: string) => {
-        const sid = getSelectedStylistId(serviceId);
+    const getSelectionLabel = (serviceId: string, variantId: string) => {
+        const sid = getSelectedStylistId(serviceId, variantId);
         if (!sid) return "Any professional";
         const name = stylists.find((s) => s.id === sid)?.name;
         return name || "Any professional";
     };
+
     return (
         <>
-            <section>
+            <section className={"min-h-screen"}>
                 <h2 className="text-2xl font-semibold">Select professional</h2>
 
                 {selectProPerService ? (
                     <>
-                        <div
-
+                        <motion.div
+                            variants={container}
+                            initial="hidden"
+                            animate="show"
                             className="mt-4 grid grid-cols-1 gap-4"
                         >
-                            {items.map(({service}) => {
-                                const label = getSelectionLabel(service.id);
+                            {items.map(({service, variant}) => {
+                                const compositeKey = `${service.id}||${variant.id}`;
+                                const label = getSelectionLabel(service.id, variant.id);
                                 return (
                                     <motion.div
-                                        key={service.id}
+                                        key={compositeKey}
                                         variants={fade}
+                                        whileHover={{scale: 1.01}}
+                                        whileTap={{scale: 0.995}}
+                                        transition={{type: "spring", stiffness: 300, damping: 24}}
                                         className="group p-5 rounded-2xl border bg-white/60 dark:bg-neutral-900/60 backdrop-blur transition-colors border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700"
                                     >
                                         <div className="flex items-center justify-between gap-4">
@@ -80,7 +87,7 @@ export default function Professional({
                                             <Button
                                                 variant="outline"
                                                 onClick={() => {
-                                                    setActiveServiceId(service.id);
+                                                    setActiveKey(compositeKey);
                                                     setDialogOpen(true);
                                                 }}
                                             >
@@ -91,32 +98,44 @@ export default function Professional({
                                 );
                             })}
 
-                            <div className="mt-2 flex justify-end">
+                            <motion.div variants={fade} className="mt-2 flex justify-end">
                                 <Button onClick={onContinue} disabled={!professional}>
                                     Continue
                                 </Button>
-                            </div>
-                        </div>
+                            </motion.div>
+                        </motion.div>
 
-                        {/* Selection dialog */}
-                        <ServiceProDialog
-                            open={dialogOpen}
-                            onOpenChange={setDialogOpen}
-                            title={items.find((it) => it.service.id === activeServiceId)?.service.name || "Select professional"}
-                            stylists={stylists}
-                            selectedStylistId={activeServiceId ? getSelectedStylistId(activeServiceId) : undefined}
-                            onSelectAny={() => {
-                                if (!activeServiceId) return;
-                                onSelectAnyForService(activeServiceId);
-                                setDialogOpen(false);
-                            }}
-                            onSelectStylist={(stylistId) => {
-                                if (!activeServiceId) return;
-                                onSelectStylistForService(stylistId, activeServiceId);
-                                setDialogOpen(false);
-                            }}
-                            onViewProfile={(id) => onViewProfile && onViewProfile(id)}
-                        />
+                        {/* Selection dialog (animated entrance) */}
+                        <motion.div
+                            initial={{opacity: 0, y: 8, scale: 0.99}}
+                            animate={dialogOpen ? {opacity: 1, y: 0, scale: 1} : {opacity: 0, y: 8, scale: 0.99}}
+                            transition={{duration: 0.14}}
+                            style={{pointerEvents: dialogOpen ? "auto" : "none"}}
+                        >
+                            <ServiceProDialog
+                                open={dialogOpen}
+                                onOpenChange={setDialogOpen}
+                                title={items.find((it) => `${it.service.id}||${it.variant.id}` === activeKey)?.service.name || "Select professional"}
+                                stylists={stylists}
+                                selectedStylistId={activeKey ? (() => {
+                                    const [sId, vId] = (activeKey as string).split("||");
+                                    return getSelectedStylistId(sId, vId);
+                                })() : undefined}
+                                onSelectAny={() => {
+                                    if (!activeKey) return;
+                                    const [sId, vId] = activeKey.split("||");
+                                    onSelectAnyForService(sId, vId);
+                                    setDialogOpen(false);
+                                }}
+                                onSelectStylist={(stylistId) => {
+                                    if (!activeKey) return;
+                                    const [sId, vId] = activeKey.split("||");
+                                    onSelectStylistForService(stylistId, sId, vId);
+                                    setDialogOpen(false);
+                                }}
+                                onViewProfile={(id) => onViewProfile && onViewProfile(id)}
+                            />
+                        </motion.div>
                     </>
                 ) : (
                     <motion.div
