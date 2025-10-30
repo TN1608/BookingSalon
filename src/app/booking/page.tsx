@@ -18,7 +18,6 @@ import ProfileDialog from "@/components/ProfileDialog";
 import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm";
 import LoginDialog from "@/components/LoginDialog";
 import {useAuth} from "@/context/AuthProvider";
-import SuccessPage from "@/app/success/page";
 
 export default function BookingPage() {
     const {showLogin, setShowLogin, user} = useAuth();
@@ -58,7 +57,7 @@ export default function BookingPage() {
         return false
     }
 
-    const handleSetSelected =(value: SelectedItem[] | ((prev: SelectedItem[]) => SelectedItem[])) => {
+    const handleSetSelected = (value: SelectedItem[] | ((prev: SelectedItem[]) => SelectedItem[])) => {
         if (typeof value === "function") {
             setSelected((prev) => {
                 const next = (value as (p: SelectedItem[]) => SelectedItem[])(prev);
@@ -241,7 +240,6 @@ export default function BookingPage() {
     }
 
 
-
     return (
         <div
             className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 lg:py-32 lg:px-18">
@@ -371,20 +369,21 @@ export default function BookingPage() {
                         onContinue={goNext}
                         canContinue={step === 1 ? canContinueFromServices : step === 2 ? canContinueFromProfessional : canContinueFromSchedule}
                         onPayAndConfirm={() => {
-                            setIsSuccessful(true);
-                        }}
-                        professional={professional}
-                        stylists={STYLISTS}
-                        waitlistActive={waitlistActive}
-                        waitlistEntries={waitlistEntries}
-                    />
+                            if (!user) {
+                                setShowLogin(true)
+                            } else {
+                                window.location.href = "/success"
+                            }}}
+                            professional={professional}
+                            stylists={STYLISTS}
+                            waitlistActive={waitlistActive}
+                            waitlistEntries={waitlistEntries}
+                            />
 
-                    <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
-                                   professional={profileStylist}/>
+                            <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}
+                        professional={profileStylist}/>
 
-                    {!user && (
-                        <LoginDialog openLogin={showLogin} onOpenChange={setShowLogin} />
-                    )}
+                    <LoginDialog openLogin={showLogin} onOpenChange={setShowLogin}/>
 
                 </div>
             </div>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import {Button} from "@/components/ui/button";
 import {motion, useScroll, useTransform} from "framer-motion";
 import {useRouter} from "next/navigation";
+import {Variants} from "motion";
 
 export default function HeroSection() {
     const navigate = useRouter();
@@ -21,16 +22,23 @@ export default function HeroSection() {
         }
     };
 
-    const fadeUp = {
-        hidden: { opacity: 0, y: 30 },
-        show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    const fadeUp: Variants = {
+        hidden: {opacity: 0, y: 30},
+        show: {
+            opacity: 1,
+            y: 0,
+            transition: {duration: 0.6, ease: [0.22, 1, 0.36, 1]}
+        }
     };
 
-    const scaleIn = {
-        hidden: { opacity: 0, scale: 0.9 },
-        show: { opacity: 1, scale: 1, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+    const scaleIn: Variants = {
+        hidden: {opacity: 0, scale: 0.9},
+        show: {
+            opacity: 1,
+            scale: 1,
+            transition: {duration: 0.8, ease: [0.22, 1, 0.36, 1]}
+        }
     };
-
     return (
         <section ref={heroRef} className="relative min-h-screen flex items-center pt-20 overflow-hidden bg-gradient-to-b from-rose-50 via-white to-white dark:from-neutral-900 dark:via-neutral-900 dark:to-neutral-950 lg:px-16 lg:py-32">
             {/* Soft gradient rings / blobs */}
