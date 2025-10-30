@@ -2,10 +2,18 @@
 import {createContext, ReactNode, useContext, useEffect, useState} from "react";
 import {useRouter} from "next/navigation";
 
+interface CardDetails {
+    name?: string
+    number?: string
+    expiry?: string
+    cvc?: string
+    cardType?: string | null
+}
 
 interface User {
     fullName: string;
     email?: string;
+    card?: CardDetails;
 }
 
 interface AuthContextType {
@@ -14,6 +22,8 @@ interface AuthContextType {
     logout: () => void;
     showLogin: boolean;
     setShowLogin: (v: boolean) => void;
+    updateCard: (card: CardDetails) => void
+
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -56,8 +66,29 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
         setUser(null);
     };
 
+    const updateCard = (card: CardDetails) => {
+        try {
+            const newUser: User = {
+                ...(user ?? { fullName: "" }),
+                card: {
+                    ...(user?.card ?? {}),
+                    ...card,
+                },
+            }
+            const remember = localStorage.getItem("rememberMe") === "true"
+            if (remember) {
+                localStorage.setItem("user", JSON.stringify(newUser))
+            } else {
+                sessionStorage.setItem("user", JSON.stringify(newUser))
+            }
+            setUser(newUser)
+        } catch (e) {
+            // silent
+        }
+    }
+
     return (
-        <AuthContext.Provider value={{user, login, logout, showLogin, setShowLogin}}>
+        <AuthContext.Provider value={{user, login, logout, showLogin, setShowLogin, updateCard}}>
             {children}
         </AuthContext.Provider>
     );

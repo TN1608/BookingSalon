@@ -399,6 +399,7 @@ export default function BookingPage() {
                         stylists={STYLISTS}
                         waitlistActive={waitlistActive}
                         waitlistEntries={waitlistEntries}
+                        hasPaymentMethod={!!user?.card?.number}
                     />
 
                     <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}

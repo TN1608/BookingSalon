@@ -9,6 +9,9 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
 import TermDialog from "@/components/TermDialog";
 import {Textarea} from "@/components/ui/textarea";
+import DialogCardDetails from "@/components/DialogCardDetails";
+import {FaPaypal} from "react-icons/fa";
+import {useAuth} from "@/context/AuthProvider";
 
 interface ReviewProps {
     items: SelectedDetail[];
@@ -20,15 +23,22 @@ interface ReviewProps {
     onConfirm: () => void;
 }
 
+type PaymentMethod = "card" | "venue" | "paypal" | null;
+
 export default function Review({items, durations, selectedDate, selectedTime, total, onBack, onConfirm}: ReviewProps) {
     const [error, setError] = useState<string | null>(null);
     const [code, setCode] = useState<string>("");
     const [appliedCode, setAppliedCode] = useState<string | null>(null);
     const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
     const [agreed, setAgreed] = useState<boolean>(false);
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+
+    const {updateCard, user} = useAuth();
+
+
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(null);
 
     const finalTotal = useMemo(() => Math.max(0, total - appliedDiscount), [total, appliedDiscount]);
-
 
     const validateCode = (raw: string) => {
         const c = raw.trim().toUpperCase();
@@ -54,8 +64,20 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         return true;
     };
 
+    // Tu dong chon card neu trong session co thong tin
+    useEffect(() => {
+        if (user?.card?.number) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setSelectedPaymentMethod("card");
+        } else {
+            if (selectedPaymentMethod === "card") setSelectedPaymentMethod(null);
+        }
+    }, [user?.card?.number]);
+
+
     useEffect(() => {
         if (total === 0 && appliedCode) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setAppliedCode(null);
             setAppliedDiscount(0);
             setCode("");
@@ -66,7 +88,28 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         if (appliedDiscount > total) {
             setAppliedDiscount(Math.min(appliedDiscount, total));
         }
-    }, [total]);
+    }, [appliedCode, appliedDiscount, total]);
+
+    const handleCardSave = (card: {
+        name?: string;
+        number?: string;
+        expiry?: string;
+        cvc?: string;
+        cardType?: string | null;
+    }) => {
+        updateCard(card);
+        setSelectedPaymentMethod("card");
+    };
+
+    const hasCard = !!user?.card?.number;
+    const canConfirm = agreed && (selectedPaymentMethod === "card" ? hasCard : selectedPaymentMethod !== null);
+    const handleSelectCard = () => {
+        if (hasCard) {
+            setSelectedPaymentMethod("card");
+        } else {
+            setDialogOpen(true);
+        }
+    }
 
     return (
         <section>
@@ -77,9 +120,9 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     <ul className="mt-2 text-sm">
                         {items.map(({service, variant}) => (
                             <li key={`${service.id}-${variant.id}`} className="flex items-center justify-between py-1">
-                <span>
-                  {service.name} — {variant.name}
-                </span>
+                                <span>
+                                  {service.name} — {variant.name}
+                                </span>
                                 <span className="text-zinc-600 dark:text-zinc-400">${variant.price}</span>
                             </li>
                         ))}
@@ -87,19 +130,45 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     <div className="mt-2 text-sm text-muted-foreground">Duration: {durations} min</div>
                 </div>
 
-                <div className={"rounded-2xl border p-4"}>
-                    <h3 className={"font-semibold"}>Payment method</h3>
-                    <div className={"mt-2 flex items-center justify-between"}>
-                        <div
-                            className={"rounded-xl border border-white/20 bg-background p-2 flex items-center justify-center gap-2"}>
-                            <MdPayments className={"h-6 w-6"}/>
-                            <p className={"text-md font-semibold"}>
-                                Pay at venue
-                            </p>
-                        </div>
+                <div className={"flex flex-col rounded-2xl border p-4 gap-2"}>
+                    <h3 className={"font-semibold text-2xl"}>Payment Method</h3>
+                    <div className={"flex items-center gap-2"}>
+                        <Button
+                            variant="outline"
+                            onClick={handleSelectCard}
+                            className={selectedPaymentMethod === "card" ? "ring-2 ring-purple-500 border-purple-500" : ""}
+                        >
+                            <MdPayments className="mr-2 h-4 w-4"/>
+                            Pay with Credit Card
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setSelectedPaymentMethod("venue")}
+                            className={selectedPaymentMethod === "venue" ? "ring-2 ring-purple-500 border-purple-500" : ""}
+                        >
+                            Pay at Venue
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={() => setSelectedPaymentMethod("paypal")}
+                            className={selectedPaymentMethod === "paypal" ? "ring-2 ring-purple-500 border-purple-500" : ""}
+                        >
+                            <FaPaypal className="mr-2 h-4 w-4"/>
+                            Pay with PayPal
+                        </Button>
                     </div>
-                </div>
 
+                    {/* show small hint if card is selected but missing */}
+                    {selectedPaymentMethod === "card" && !hasCard && (
+                        <div className="mt-2 text-sm text-muted-foreground">No card on file — add one to pay with
+                            card.</div>
+                    )}
+                </div>
+                <DialogCardDetails
+                    open={dialogOpen}
+                    onOpenChange={setDialogOpen}
+                    onSave={handleCardSave}
+                />
                 <div className={"flex flex-col gap-2"}>
                     <h3 className={"font-semibold text-2xl"}>Discount Code</h3>
                     <div className="flex gap-2">
@@ -190,7 +259,8 @@ export default function Review({items, durations, selectedDate, selectedTime, to
 
                 <div className="*:not-first:mt-2">
                     <Label className={"text-xl"}>Booking Note</Label>
-                    <Textarea placeholder="Include comments or requests about your booking." className={"min-h-[100px] w-xl"} />
+                    <Textarea placeholder="Include comments or requests about your booking."
+                              className={"min-h-[100px] w-xl"}/>
                 </div>
 
                 <div className="flex items-center mt-4 gap-2">
@@ -203,7 +273,18 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     <Button variant="outline" onClick={onBack}>
                         Back
                     </Button>
-                    <Button className="px-8" onClick={onConfirm} disabled={!agreed}>
+                    <Button
+                        className="px-8"
+                        onClick={() => {
+                            if (!canConfirm) {
+                                setError(!agreed ? "You must agree to terms." : "Select a payment method before confirming.");
+                                if (selectedPaymentMethod === "card" && !hasCard) setDialogOpen(true);
+                                return;
+                            }
+                            onConfirm();
+                        }}
+                        disabled={!canConfirm}
+                    >
                         Confirm Booking • ${finalTotal}
                     </Button>
                 </div>

@@ -54,7 +54,7 @@ export default function Services({
     };
 
     return (
-        <section>
+        <section className={"min-h-screen"}>
             <h2 className="text-2xl font-semibold">Select services</h2>
 
             <CategoryChips category={category} setCategory={setCategory}/>

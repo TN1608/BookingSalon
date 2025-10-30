@@ -42,6 +42,7 @@ export default function WaitlistPage({
                                          onBookNow,
                                      }: WaitlistPageProps) {
     const baseId = useId();
+    const containerId = useId();
     const availableEntries = entries.filter(
         (r) => r.date && availableDates.includes(r.date.toISOString().slice(0, 10))
     );
@@ -76,8 +77,8 @@ export default function WaitlistPage({
                     const timeInputId = `${baseId}-time-${idx}`;
                     const isAvailableNow = !!row.date && availableDates.includes(row.date.toISOString().slice(0, 10))
                     return (
-                        <>
-                            <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                        <div key={idx}>
+                            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 items-end">
                                 {/* Date */}
                                 <div className="*:not-first:mt-2">
                                     <Label htmlFor={dateInputId}>Date</Label>
@@ -150,7 +151,7 @@ export default function WaitlistPage({
                                     </Button>
                                 </div>
                             </div>
-                        </>
+                        </div>
                     )
                 })}
                 <div>
