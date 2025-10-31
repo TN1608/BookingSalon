@@ -12,6 +12,7 @@ import {Textarea} from "@/components/ui/textarea";
 import DialogCardDetails from "@/components/DialogCardDetails";
 import {FaPaypal} from "react-icons/fa";
 import {useAuth} from "@/context/AuthProvider";
+import LoginDialog from "@/components/LoginDialog";
 
 interface ReviewProps {
     items: SelectedDetail[];
@@ -26,17 +27,17 @@ interface ReviewProps {
 type PaymentMethod = "card" | "venue" | "paypal" | null;
 
 export default function Review({items, durations, selectedDate, selectedTime, total, onBack, onConfirm}: ReviewProps) {
+    const {updateCard, user} = useAuth();
+
     const [error, setError] = useState<string | null>(null);
     const [code, setCode] = useState<string>("");
     const [appliedCode, setAppliedCode] = useState<string | null>(null);
     const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
     const [agreed, setAgreed] = useState<boolean>(false);
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-
-    const {updateCard, user} = useAuth();
-
-
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(null);
+    const [openLoginDialog, setOpenLoginDialog] = useState(false);
+    const [openCardAfterLogin, setOpenCardAfterLogin] = useState(false);
 
     const finalTotal = useMemo(() => Math.max(0, total - appliedDiscount), [total, appliedDiscount]);
 
@@ -74,6 +75,14 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         }
     }, [user?.card?.number]);
 
+    // After login, if we wanted to open card dialog, do it now
+    useEffect(() => {
+        if (user && openCardAfterLogin) {
+            setOpenCardAfterLogin(false);
+            // open card dialog so user can add/select card
+            setDialogOpen(true);
+        }
+    }, [user, openCardAfterLogin]);
 
     useEffect(() => {
         if (total === 0 && appliedCode) {
@@ -103,12 +112,40 @@ export default function Review({items, durations, selectedDate, selectedTime, to
 
     const hasCard = !!user?.card?.number;
     const canConfirm = agreed && (selectedPaymentMethod === "card" ? hasCard : selectedPaymentMethod !== null);
+
     const handleSelectCard = () => {
-        if (hasCard) {
-            setSelectedPaymentMethod("card");
+        if (user) {
+            // logged in: if has card select, otherwise open card dialog to add
+            if (hasCard) {
+                setSelectedPaymentMethod("card");
+            } else {
+                setDialogOpen(true);
+            }
         } else {
-            setDialogOpen(true);
+            // not logged in: show login then open card dialog afterwards
+            setOpenCardAfterLogin(true);
+            setOpenLoginDialog(true);
         }
+    }
+
+    const handleSubmit = () => {
+        if (!canConfirm) {
+            setError(!agreed ? "You must agree to terms." : "Select a payment method before confirming.");
+            // If user is trying to confirm with card but not logged in or missing card, route them to login/card dialog
+            if (selectedPaymentMethod === "card") {
+                if (!user) {
+                    setOpenCardAfterLogin(true);
+                    setOpenLoginDialog(true);
+                    return;
+                }
+                if (!hasCard) {
+                    setDialogOpen(true);
+                    return;
+                }
+            }
+            return;
+        }
+        onConfirm();
     }
 
     return (
@@ -275,20 +312,14 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     </Button>
                     <Button
                         className="px-8"
-                        onClick={() => {
-                            if (!canConfirm) {
-                                setError(!agreed ? "You must agree to terms." : "Select a payment method before confirming.");
-                                if (selectedPaymentMethod === "card" && !hasCard) setDialogOpen(true);
-                                return;
-                            }
-                            onConfirm();
-                        }}
+                        onClick={handleSubmit}
                         disabled={!canConfirm}
                     >
                         Confirm Booking • ${finalTotal}
                     </Button>
                 </div>
             </div>
+            <LoginDialog openLogin={openLoginDialog} onOpenChange={setOpenLoginDialog} />
         </section>
     );
 }

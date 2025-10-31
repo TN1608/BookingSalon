@@ -1,4 +1,3 @@
-// src/components/LoginDialog.tsx
 "use client"
 import {useId, useState} from "react"
 
