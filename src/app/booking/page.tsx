@@ -78,7 +78,6 @@ export default function BookingPage() {
         }
     }
 
-
     const selectedDetails = useMemo(
         () =>
             selected
@@ -202,11 +201,11 @@ export default function BookingPage() {
         }
         const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
         const newMap = {...currentMap};
-        if(variantId) {
+        if (variantId) {
             delete newMap[makeKey(serviceId, variantId)];
-        }else {
+        } else {
             Object.keys(newMap).forEach(k => {
-                if(k.startsWith(serviceId)) {
+                if (k.startsWith(serviceId)) {
                     delete newMap[k]
                 }
             })
@@ -222,9 +221,9 @@ export default function BookingPage() {
         }
         const currentMap = professional?.mode === "perService" ? professional.map || {} : {};
         const newMap = {...currentMap};
-        if(variantId) {
-            newMap[makeKey(serviceId,variantId)] = stylistId;
-        }else {
+        if (variantId) {
+            newMap[makeKey(serviceId, variantId)] = stylistId;
+        } else {
             newMap[makeKey(serviceId)] = stylistId;
         }
         setProfessional({mode: "perService", map: newMap});
@@ -247,16 +246,97 @@ export default function BookingPage() {
 
     const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
 
-    const handleBookNow = (date: Date) => {
+    const handleBookNow = async (date: Date) => {
         const key = date.toISOString().slice(0, 10);
         setWaitlistActive(false)
         setSelectedDate(key)
         setSelectedTime(timeSlots[0] ?? null)
         setFromWaitlist(false)
+        try{
+            if (!user?.email) {
+                toast.error("No email available to send confirmation.");
+                window.location.href = "/success";
+                return;
+            }
+            await fetch('/api/send-waitlist-email', {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    to: user.email,
+                    name: user?.fullName ?? "Customer",
+                    date: selectedDate,
+                    time: selectedTime,
+                    serviceName: selectedDetails.map((d) => d.service.name).join(", "),
+                }),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Failed to send confirmation email.");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("Email sent successfully:", data);
+                    toast.success("Confirmation email sent.");
+                })
+                .catch((error) => {
+                    console.error("Send confirmation failed:", error);
+                    toast.error("Failed to send confirmation email.");
+                });
+            toast.success("Confirmation email sent.");
+        }catch (err) {
+            console.error("Failed to book now:", err);
+            toast.error("Failed to book now.");
+        }
     }
 
-    const handleBookSuccess = () => {
-        window.location.href = "/success"
+    const handleBookSuccess = async () => {
+        if (!user?.email) {
+            toast.error("No email available to send confirmation.");
+            window.location.href = "/success";
+            return;
+        }
+        try {
+            await fetch("/api/send-email", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    to: user.email,
+                    name: user?.fullName ?? "Customer",
+                    date: selectedDate,
+                    time: selectedTime,
+                    staffName: professional?.mode === "stylist"
+                        ? STYLISTS.find((s) => s.id === professional.stylistId)?.name || "—"
+                        : professional?.mode === "perService"
+                            ? "Multiple Stylists"
+                            : "—",
+                    serviceName: selectedDetails.map((d) => d.service.name).join(", "),
+                }),
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Failed to send confirmation email.");
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("Email sent successfully:", data);
+                    toast.success("Confirmation email sent.");
+                })
+                .catch((error) => {
+                    console.error("Send confirmation failed:", error);
+                    toast.error("Failed to send confirmation email.");
+                });
+            toast.success("Confirmation email sent.");
+        } catch (err) {
+            console.error("Send confirmation failed:", err);
+            toast.error("Failed to send confirmation email.");
+        }
+        // window.location.href = "/success"
     }
 
 
@@ -388,13 +468,7 @@ export default function BookingPage() {
                         }
                         onContinue={goNext}
                         canContinue={step === 1 ? canContinueFromServices : step === 2 ? canContinueFromProfessional : canContinueFromSchedule}
-                        onPayAndConfirm={() => {
-                            if (!user) {
-                                setShowLogin(true)
-                            } else {
-                                window.location.href = "/success"
-                            }
-                        }}
+                        onPayAndConfirm={handleBookSuccess}
                         professional={professional}
                         stylists={STYLISTS}
                         waitlistActive={waitlistActive}

@@ -78,8 +78,8 @@ export default function Review({items, durations, selectedDate, selectedTime, to
     // After login, if we wanted to open card dialog, do it now
     useEffect(() => {
         if (user && openCardAfterLogin) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setOpenCardAfterLogin(false);
-            // open card dialog so user can add/select card
             setDialogOpen(true);
         }
     }, [user, openCardAfterLogin]);
