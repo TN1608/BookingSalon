@@ -246,12 +246,7 @@ export default function BookingPage() {
 
     const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
 
-    const handleBookNow = async (date: Date) => {
-        const key = date.toISOString().slice(0, 10);
-        setWaitlistActive(false)
-        setSelectedDate(key)
-        setSelectedTime(timeSlots[0] ?? null)
-        setFromWaitlist(false)
+    const handleWaitlist = async () => {
         try{
             if (!user?.email) {
                 toast.error("No email available to send confirmation.");
@@ -291,6 +286,13 @@ export default function BookingPage() {
             toast.error("Failed to book now.");
         }
     }
+    const handleBookNow = (date: Date) => {
+        const key = date.toISOString().slice(0, 10);
+        setWaitlistActive(false)
+        setSelectedDate(key)
+        setSelectedTime(timeSlots[0] ?? null)
+        setFromWaitlist(false)
+    }
 
     const handleBookSuccess = async () => {
         if (!user?.email) {
@@ -322,10 +324,6 @@ export default function BookingPage() {
                         throw new Error("Failed to send confirmation email.");
                     }
                     return response.json();
-                })
-                .then((data) => {
-                    console.log("Email sent successfully:", data);
-                    toast.success("Confirmation email sent.");
                 })
                 .catch((error) => {
                     console.error("Send confirmation failed:", error);
@@ -436,9 +434,7 @@ export default function BookingPage() {
                                         selectedTime={selectedTime}
                                         total={total}
                                         onBack={goBack}
-                                        onConfirm={() => {
-                                            setIsSuccessful(true);
-                                        }}
+                                        onConfirm={handleWaitlist}
                                         waitlistEntries={waitlistEntries}
                                     />
                                 ) : (
