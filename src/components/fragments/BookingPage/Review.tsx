@@ -27,7 +27,7 @@ interface ReviewProps {
 type PaymentMethod = "card" | "venue" | "paypal" | null;
 
 export default function Review({items, durations, selectedDate, selectedTime, total, onBack, onConfirm}: ReviewProps) {
-    const {updateCard, user} = useAuth();
+    const {currentUser, isAuthenticated} = useAuth();
 
     const [error, setError] = useState<string | null>(null);
     const [code, setCode] = useState<string>("");
@@ -66,23 +66,23 @@ export default function Review({items, durations, selectedDate, selectedTime, to
     };
 
     // Tu dong chon card neu trong session co thong tin
-    useEffect(() => {
-        if (user?.card?.number) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setSelectedPaymentMethod("card");
-        } else {
-            if (selectedPaymentMethod === "card") setSelectedPaymentMethod(null);
-        }
-    }, [user?.card?.number]);
+    // useEffect(() => {
+    //     if (user?.card?.number) {
+    //         // eslint-disable-next-line react-hooks/set-state-in-effect
+    //         setSelectedPaymentMethod("card");
+    //     } else {
+    //         if (selectedPaymentMethod === "card") setSelectedPaymentMethod(null);
+    //     }
+    // }, [user?.card?.number]);
 
     // After login, if we wanted to open card dialog, do it now
-    useEffect(() => {
-        if (user && openCardAfterLogin) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setOpenCardAfterLogin(false);
-            setDialogOpen(true);
-        }
-    }, [user, openCardAfterLogin]);
+    // useEffect(() => {
+    //     if (user && openCardAfterLogin) {
+    //         // eslint-disable-next-line react-hooks/set-state-in-effect
+    //         setOpenCardAfterLogin(false);
+    //         setDialogOpen(true);
+    //     }
+    // }, [user, openCardAfterLogin]);
 
     useEffect(() => {
         if (total === 0 && appliedCode) {
@@ -106,40 +106,17 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         cvc?: string;
         cardType?: string | null;
     }) => {
-        updateCard(card);
         setSelectedPaymentMethod("card");
     };
 
-    const hasCard = !!user?.card?.number;
-    const canConfirm = agreed && (selectedPaymentMethod === "card" ? hasCard : selectedPaymentMethod !== null);
-
-    const handleSelectCard = () => {
-        if (user) {
-            // logged in: if has card select, otherwise open card dialog to add
-            if (hasCard) {
-                setSelectedPaymentMethod("card");
-            } else {
-                setDialogOpen(true);
-            }
-        } else {
-            // not logged in: show login then open card dialog afterwards
-            setOpenCardAfterLogin(true);
-            setOpenLoginDialog(true);
-        }
-    }
-
     const handleSubmit = () => {
-        if (!canConfirm) {
+        if (!agreed || !selectedPaymentMethod) {
             setError(!agreed ? "You must agree to terms." : "Select a payment method before confirming.");
             // If user is trying to confirm with card but not logged in or missing card, route them to login/card dialog
             if (selectedPaymentMethod === "card") {
-                if (!user) {
+                if (!currentUser) {
                     setOpenCardAfterLogin(true);
                     setOpenLoginDialog(true);
-                    return;
-                }
-                if (!hasCard) {
-                    setDialogOpen(true);
                     return;
                 }
             }
@@ -172,7 +149,13 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     <div className={"flex items-center gap-2"}>
                         <Button
                             variant="outline"
-                            onClick={handleSelectCard}
+                            onClick={() => {
+                                if (currentUser) {
+                                    setSelectedPaymentMethod("card");
+                                } else {
+                                    setOpenLoginDialog(true);
+                                }
+                            }}
                             className={selectedPaymentMethod === "card" ? "ring-2 ring-purple-500 border-purple-500" : ""}
                         >
                             <MdPayments className="mr-2 h-4 w-4"/>
@@ -196,7 +179,7 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     </div>
 
                     {/* show small hint if card is selected but missing */}
-                    {selectedPaymentMethod === "card" && !hasCard && (
+                    {selectedPaymentMethod === "card" && (
                         <div className="mt-2 text-sm text-muted-foreground">No card on file — add one to pay with
                             card.</div>
                     )}
@@ -313,13 +296,13 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                     <Button
                         className="px-8"
                         onClick={handleSubmit}
-                        disabled={!canConfirm}
+                        disabled={!agreed || !selectedPaymentMethod}
                     >
                         Confirm Booking • ${finalTotal}
                     </Button>
                 </div>
             </div>
-            <LoginDialog openLogin={openLoginDialog} onOpenChange={setOpenLoginDialog} />
+            <LoginDialog openLogin={openLoginDialog} onOpenChange={setOpenLoginDialog}/>
         </section>
     );
 }
