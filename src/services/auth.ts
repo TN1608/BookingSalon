@@ -11,7 +11,7 @@ export const getUserInfo = async (): Promise<ApiResponse> => {
     }
 }
 
-export const register = async (fullName: string, email: string, password: string): Promise<ApiResponse> => {
+export const registerApi = async (fullName: string, email: string, password: string): Promise<ApiResponse> => {
     try {
         const response = await api.post('/signup', { fullName, email, password });
         return response.data;

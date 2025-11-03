@@ -15,6 +15,8 @@ interface CardDetails {
 interface User {
     fullName: string;
     email?: string;
+    provider?: string;
+    verified?: boolean;
     // card?: CardDetails;
 }
 
@@ -41,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({children}
     const fetchUser = async () => {
         try {
             const resp = await getUserInfo();
-            return resp.data;
+            setCurrentUser(resp.data);
         } catch (err) {
             console.error('Error fetching user:', err);
             toast.error('Failed to fetch user');

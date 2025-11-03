@@ -12,7 +12,7 @@ import {Textarea} from "@/components/ui/textarea";
 import DialogCardDetails from "@/components/DialogCardDetails";
 import {FaPaypal} from "react-icons/fa";
 import {useAuth} from "@/context/AuthProvider";
-import LoginDialog from "@/components/LoginDialog";
+import LoginDialog from "@/components/LoginDialog/LoginDialog";
 
 interface ReviewProps {
     items: SelectedDetail[];

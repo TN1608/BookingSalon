@@ -7,6 +7,7 @@ import {format} from "date-fns";
 
 import type {SelectedProfessional, TStylist} from "../../../types/types";
 import {Variants} from "motion";
+import {useAuth} from "@/context/AuthProvider";
 
 interface SummaryAsideProps {
     items: SelectedDetail[];
@@ -55,6 +56,16 @@ export default function SummaryAside({
                                          waitlistEntries,
                                          hasPaymentMethod = false,
                                      }: SummaryAsideProps) {
+    const {isAuthenticated, setShowLogin} = useAuth();
+
+    const handlePayClick = () => {
+        if (!isAuthenticated) {
+            setShowLogin(true);
+            return;
+        }
+        onPayAndConfirm?.();
+    };
+
     return (
         <motion.aside
             layout
@@ -187,7 +198,7 @@ export default function SummaryAside({
                     </motion.div>
                 ) : (
                     <motion.div whileHover={{scale: 1.02}} whileTap={{scale: 0.98}}>
-                        <Button className="w-full" onClick={() => onPayAndConfirm?.()}>
+                        <Button className="w-full" onClick={handlePayClick}>
                             Pay and Confirm
                         </Button>
                     </motion.div>

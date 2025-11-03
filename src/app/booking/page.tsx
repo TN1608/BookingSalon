@@ -16,11 +16,11 @@ import Professional from "@/components/fragments/BookingPage/Professional";
 import {toast} from "sonner";
 import ProfileDialog from "@/components/ProfileDialog";
 import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm";
-import LoginDialog from "@/components/LoginDialog";
+import LoginDialog from "@/components/LoginDialog/LoginDialog";
 import {useAuth} from "@/context/AuthProvider";
 
 export default function BookingPage() {
-    const {showLogin, setShowLogin, user} = useAuth();
+    const {showLogin, setShowLogin, currentUser, isAuthenticated} = useAuth();
 
     const [step, setStep] = useState<Step>(1);
     const [selected, setSelected] = useState<SelectedItem[]>([]);
@@ -248,7 +248,7 @@ export default function BookingPage() {
 
     const handleWaitlist = async () => {
         try{
-            if (!user?.email) {
+            if (!currentUser?.email) {
                 toast.error("No email available to send confirmation.");
                 window.location.href = "/success";
                 return;
@@ -259,8 +259,8 @@ export default function BookingPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    to: user.email,
-                    name: user?.fullName ?? "Customer",
+                    to: currentUser.email,
+                    name: currentUser?.fullName ?? "Customer",
                     date: selectedDate,
                     time: selectedTime,
                     serviceName: selectedDetails.map((d) => d.service.name).join(", "),
@@ -295,7 +295,7 @@ export default function BookingPage() {
     }
 
     const handleBookSuccess = async () => {
-        if (!user?.email) {
+        if (!currentUser?.email) {
             toast.error("No email available to send confirmation.");
             window.location.href = "/success";
             return;
@@ -307,8 +307,8 @@ export default function BookingPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    to: user.email,
-                    name: user?.fullName ?? "Customer",
+                    to: currentUser.email,
+                    name: currentUser?.fullName ?? "Customer",
                     date: selectedDate,
                     time: selectedTime,
                     staffName: professional?.mode === "stylist"
@@ -469,7 +469,6 @@ export default function BookingPage() {
                         stylists={STYLISTS}
                         waitlistActive={waitlistActive}
                         waitlistEntries={waitlistEntries}
-                        hasPaymentMethod={!!user?.card?.number}
                     />
 
                     <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}

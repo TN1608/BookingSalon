@@ -19,7 +19,7 @@ const CardNav = ({
                      buttonTextColor,
                      buttonText
                  }) => {
-    const {user, logout, setShowLogin} = useAuth();
+    const {currentUser, logout, setShowLogin,isAuthenticated} = useAuth();
 
     const [isHamburgerOpen, setIsHamburgerOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -178,10 +178,10 @@ const CardNav = ({
                     </Link>
 
                     <div className="nav-actions flex items-center gap-4 order-3 md:order-none">
-                        {user ? (
+                        {isAuthenticated ? (
                             <div className={"flex items-center gap-2"}>
                                             <span
-                                                className="hidden md:inline-block text-sm text-muted-foreground">Welcome, {user.fullName}</span>
+                                                className="hidden md:inline-block text-sm text-muted-foreground">Welcome, {currentUser?.fullName}</span>
                                 <Button onClick={logout} variant="default"
                                         className="card-nav-cta-button hidden md:inline-flex border-accent border bg-white rounded-full px-4 h-full font-medium cursor-pointer transition-colors duration-300"
 
