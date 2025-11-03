@@ -18,6 +18,8 @@ import ProfileDialog from "@/components/ProfileDialog";
 import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm";
 import LoginDialog from "@/components/LoginDialog/LoginDialog";
 import {useAuth} from "@/context/AuthProvider";
+import {BookingPayload, checkout} from "@/services/checkout";
+import {loadStripe} from "@stripe/stripe-js";
 
 export default function BookingPage() {
     const {showLogin, setShowLogin, currentUser, isAuthenticated} = useAuth();
@@ -40,6 +42,9 @@ export default function BookingPage() {
 
     const [profileOpen, setProfileOpen] = useState(false);
     const [profileStylist, setProfileStylist] = useState<TStylist | null>(null);
+
+    const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+
 
     const openProfile = (id: string) => {
         const s = STYLISTS.find((x) => x.id === id) || null;
@@ -247,7 +252,7 @@ export default function BookingPage() {
     const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
 
     const handleWaitlist = async () => {
-        try{
+        try {
             if (!currentUser?.email) {
                 toast.error("No email available to send confirmation.");
                 window.location.href = "/success";
@@ -281,7 +286,7 @@ export default function BookingPage() {
                     toast.error("Failed to send confirmation email.");
                 });
             toast.success("Confirmation email sent.");
-        }catch (err) {
+        } catch (err) {
             console.error("Failed to book now:", err);
             toast.error("Failed to book now.");
         }
@@ -295,9 +300,46 @@ export default function BookingPage() {
     }
 
     const handleBookSuccess = async () => {
-        if (!currentUser?.email) {
-            toast.error("No email available to send confirmation.");
-            window.location.href = "/success";
+        const services = selectedDetails.map((d) => ({
+            name: d.service.name,
+            description: d.variant.name,
+            quantity: 1,
+            price: d.variant.price,
+        }));
+
+        const payload: BookingPayload = {
+            userId: currentUser?.id ?? null,
+            userEmail: currentUser?.email ?? null,
+            phone: (currentUser as any)?.phone ?? null,
+            services,
+            totalPrice: total,
+            discountPercent: 0,
+            startTime: selectedDate ? `${selectedDate}T${selectedTime ?? "00:00:00"}` : null,
+            totalDuration: durations,
+            stylist: professional?.mode === "stylist" ? { id: professional.stylistId } : professional?.mode === "perService" ? null : null,
+            notes: "",
+        };
+
+        try {
+            const resp = await checkout(payload);
+            const sessionId = resp?.data;
+
+            if (!sessionId) {
+                toast.error("Payment session not created.");
+                return;
+            }
+
+            const stripe = await stripePromise;
+            if (!stripe) {
+                toast.error("Stripe failed to initialize.");
+                return;
+            }
+
+            // cast to any to avoid TS error about redirectToCheckout
+            await (stripe as unknown as any).redirectToCheckout({ sessionId });
+        } catch (err: any) {
+            console.error("Checkout error:", err);
+            toast.error(err?.message || "Failed to start checkout.");
             return;
         }
         try {
@@ -307,7 +349,7 @@ export default function BookingPage() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    to: currentUser.email,
+                    to: currentUser?.email,
                     name: currentUser?.fullName ?? "Customer",
                     date: selectedDate,
                     time: selectedTime,
