@@ -1,75 +1,128 @@
+// javascript
 const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const {
     doc,
-    setDoc,
-    getDocs,
-    getDoc,
-    writeBatch,
     updateDoc,
+    getDocs,
     query,
     where,
     collection,
-    deleteDoc
 } = require('firebase/firestore');
-const {db} = require('../lib/firebase');
-const ERROR = require('../constants/ErrorCode');
+const { db } = require('../lib/firebase');
 const passport = require('passport');
+const { createAppointment } = require('../models/appointment');
 
 exports.checkoutSession = [
-    passport.authenticate('jwt', {session: false}),
+    passport.authenticate('jwt', { session: false }),
     async (req, res) => {
-        const {lineItems} = req.body;
+        const {
+            userId,
+            userEmail,
+            phone,
+            services,
+            totalPrice,
+            discountPercent,
+            startTime,
+            totalDuration,
+            stylist,
+            notes,
+        } = req.body;
+
         try {
-            if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
-                return res.status(400).json({error: 'Invalid line items'});
-            }
+            const apptQuery = query(
+                collection(db, 'appointments'),
+                where('stylistId', '==', stylist.id),
+                where('status', 'in', ['pending', 'confirmed'])
+            );
+            const snapshot = await getDocs(apptQuery);
+
+            const start = new Date(startTime);
+            const end = new Date(start.getTime() + totalDuration * 60000);
+            const conflict = snapshot.docs.some(d => {
+                const appt = d.data();
+                const s2 = new Date(appt.startTime);
+                const e2 = new Date(appt.endTime);
+                return start < e2 && end > s2;
+            });
+            if (conflict) return res.status(409).json({ message: 'Stylist is busy' });
+
+            const finalPrice = totalPrice * (1 - (discountPercent || 0) / 100);
+            const amountCents = Math.round(finalPrice * 100);
+
+            const appointmentRef = await createAppointment({
+                customerId: userId,
+                stylistId: stylist.id,
+                finalPrice,
+                startTime,
+                duration: totalDuration,
+                notes,
+                status: 'pending',
+                services,
+                discountPercent,
+            });
+
+            const appointmentId = (appointmentRef && appointmentRef.id) || appointmentRef;
 
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
-                line_items: lineItems.map(item => ({
-                    price: item.price,
-                    quantity: item.quantity
-                })),
                 mode: 'payment',
+                line_items: [
+                    {
+                        price_data: {
+                            currency: 'usd',
+                            product_data: {
+                                name: `Booking with ${stylist?.name || 'stylist'}`,
+                                description: (services || []).map(s => s.name).join(', '),
+                            },
+                            unit_amount: amountCents,
+                        },
+                        quantity: 1,
+                    },
+                ],
                 success_url: `${process.env.SUCCESS_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: process.env.CANCEL_URL,
                 metadata: {
-                    userId: req.user.id,
+                    appointmentId: String(appointmentId),
+                    userId: String(req.user.id),
                 },
                 payment_intent_data: {
                     metadata: {
-                        userId: req.user.id,
-                    }
-                }
+                        appointmentId: String(appointmentId),
+                        userId: String(req.user.id),
+                    },
+                },
             });
 
-            return res.status(200).json({data: session.id});
+            // Use modular API to update document (fixes invalid document reference error)
+            await updateDoc(doc(db, 'appointments', String(appointmentId)), {
+                stripeSessionId: session.id,
+            });
+
+            return res.status(200).json({ data: session.id });
         } catch (err) {
             console.error('Error creating checkout session:', err);
-            return res.status(500).json({error: 'Failed to create checkout session'});
+            return res.status(500).json({ error: 'Failed to create checkout session' });
         }
-    }
-]
+    },
+];
 
 exports.syncItems = async (req, res) => {
     try {
         const itemsSnapshot = await getDocs(collection(db, 'items'));
-        const items = itemsSnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const items = itemsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
         for (const item of items) {
+            const priceCents = Math.round((item.price || 0) * 100);
+
             const stripeProduct = await stripe.products.create({
                 name: item.name,
-                default_price_data: {
-                    unit_amount: item.price * 100, // Stripe expects amount in cents
-                    currency: 'usd',
-                },
-                description: item.description | '',
+                description: item.description || '',
             });
 
             const stripePrice = await stripe.prices.create({
                 product: stripeProduct.id,
-                unit_amount: item.price * 100,
+                unit_amount: priceCents,
                 currency: 'usd',
             });
 
@@ -79,9 +132,9 @@ exports.syncItems = async (req, res) => {
             });
         }
 
-        return res.status(200).json({message: 'Products synced successfully'});
+        return res.status(200).json({ message: 'Products synced successfully' });
     } catch (err) {
         console.error('Error syncing products:', err);
-        return res.status(500).json({error: 'Failed to sync products'});
+        return res.status(500).json({ error: 'Failed to sync products' });
     }
-}
+};
