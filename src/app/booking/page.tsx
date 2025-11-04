@@ -19,10 +19,11 @@ import WaitlistConfirm from "@/components/fragments/BookingPage/WaitListConfirm"
 import LoginDialog from "@/components/LoginDialog/LoginDialog";
 import {useAuth} from "@/context/AuthProvider";
 import {BookingPayload, checkout} from "@/services/checkout";
-import {loadStripe} from "@stripe/stripe-js";
+import {useRouter} from "next/navigation";
 
 export default function BookingPage() {
-    const {showLogin, setShowLogin, currentUser, isAuthenticated} = useAuth();
+    const {showLogin, setShowLogin, currentUser} = useAuth();
+    const router = useRouter();
 
     const [step, setStep] = useState<Step>(1);
     const [selected, setSelected] = useState<SelectedItem[]>([]);
@@ -38,13 +39,28 @@ export default function BookingPage() {
     const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{}]);
     const [fromWaitlist, setFromWaitlist] = useState(false)
 
-    const [isSuccessful, setIsSuccessful] = useState(false);
-
     const [profileOpen, setProfileOpen] = useState(false);
     const [profileStylist, setProfileStylist] = useState<TStylist | null>(null);
 
-    const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+    const [agreed, setAgreed] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<"card" | "venue" | "paypal" | null>(null);
+    const [code, setCode] = useState<string>("");
+    const [appliedCode, setAppliedCode] = useState<string | null>(null);
+    const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
 
+    const selectedDetails = useMemo(
+        () =>
+            selected
+                .map((it) => {
+                    const s = SERVICE_DATA.find((x) => x.id === it.serviceId);
+                    const v = s?.variants.find((x) => x.id === it.variantId);
+                    return s && v ? {service: s, variant: v} : null;
+                })
+                .filter(Boolean) as { service: TService; variant: TVariant }[],
+        [selected]
+    );
+    const total = useMemo(() => selectedDetails.reduce((sum, d) => sum + d.variant.price, 0), [selectedDetails]);
+    const finalTotal = useMemo(() => Math.max(0, total - appliedDiscount), [total, appliedDiscount]);
 
     const openProfile = (id: string) => {
         const s = STYLISTS.find((x) => x.id === id) || null;
@@ -83,21 +99,9 @@ export default function BookingPage() {
         }
     }
 
-    const selectedDetails = useMemo(
-        () =>
-            selected
-                .map((it) => {
-                    const s = SERVICE_DATA.find((x) => x.id === it.serviceId);
-                    const v = s?.variants.find((x) => x.id === it.variantId);
-                    return s && v ? {service: s, variant: v} : null;
-                })
-                .filter(Boolean) as { service: TService; variant: TVariant }[],
-        [selected]
-    );
+
 
     const isAbove = useMemo(() => selectedDetails.length >= 2, [selectedDetails]);
-
-    const total = useMemo(() => selectedDetails.reduce((sum, d) => sum + d.variant.price, 0), [selectedDetails]);
 
     const parseDurationToMin = (str: string): number => {
         const hours = /([\d.]+)\s*hr/.exec(str)?.[1];
@@ -308,9 +312,9 @@ export default function BookingPage() {
         }));
 
         const payload: BookingPayload = {
-            userId: currentUser?.id ?? null,
+            // userId: currentUser?.id ?? null,
             userEmail: currentUser?.email ?? null,
-            phone: (currentUser as any)?.phone ?? null,
+            // phone: (currentUser as any)?.phone ?? null,
             services,
             totalPrice: total,
             discountPercent: 0,
@@ -322,21 +326,7 @@ export default function BookingPage() {
 
         try {
             const resp = await checkout(payload);
-            const sessionId = resp?.data;
-
-            if (!sessionId) {
-                toast.error("Payment session not created.");
-                return;
-            }
-
-            const stripe = await stripePromise;
-            if (!stripe) {
-                toast.error("Stripe failed to initialize.");
-                return;
-            }
-
-            // cast to any to avoid TS error about redirectToCheckout
-            await (stripe as unknown as any).redirectToCheckout({ sessionId });
+            router.push(resp.data)
         } catch (err: any) {
             console.error("Checkout error:", err);
             toast.error(err?.message || "Failed to start checkout.");
@@ -488,6 +478,19 @@ export default function BookingPage() {
                                         total={total}
                                         onBack={goBack}
                                         onConfirm={handleBookSuccess}
+                                        professional={professional}
+                                        agreed={agreed}
+                                        selectedPaymentMethod={selectedPaymentMethod}
+                                        onPaymentMethodSelect={setSelectedPaymentMethod}
+                                        finalTotal={finalTotal}
+                                        code={code}
+                                        setCode={setCode}
+                                        appliedCode={appliedCode}
+                                        setAppliedCode={setAppliedCode}
+                                        setAppliedDiscount={setAppliedDiscount}
+                                        appliedDiscount={appliedDiscount}
+                                        setAgreed={setAgreed}
+                                        setSelectedPaymentMethod={setSelectedPaymentMethod}
                                     />
                                 )
                             )}
@@ -499,7 +502,6 @@ export default function BookingPage() {
                         selectedCount={selected.length}
                         selectedDate={selectedDate}
                         selectedTime={selectedTime}
-                        total={total}
                         step={step}
                         onRemove={(serviceId, variantId) =>
                             setSelected((prev) => prev.filter((p) => !(p.serviceId === serviceId && p.variantId === variantId)))
@@ -511,6 +513,10 @@ export default function BookingPage() {
                         stylists={STYLISTS}
                         waitlistActive={waitlistActive}
                         waitlistEntries={waitlistEntries}
+                        agreed={agreed}
+                        selectedPaymentMethod={selectedPaymentMethod}
+                        onPaymentMethodSelect={setSelectedPaymentMethod}
+                        finalTotal={finalTotal}
                     />
 
                     <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)}

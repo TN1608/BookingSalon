@@ -1,31 +1,32 @@
 "use client"
 import {motion, AnimatePresence} from "framer-motion";
 import {Button} from "@/components/ui/button";
-import type {SelectedDetail, Step, WaitlistEntry} from "../../../types/types";
+import type {SelectedDetail, Step, WaitlistEntry, SelectedProfessional, TStylist} from "@/types/types";
 import {IoMdRemove} from "react-icons/io";
 import {format} from "date-fns";
-
-import type {SelectedProfessional, TStylist} from "../../../types/types";
 import {Variants} from "motion";
 import {useAuth} from "@/context/AuthProvider";
+import {toast} from "sonner";
 
 interface SummaryAsideProps {
     items: SelectedDetail[];
     selectedCount: number;
     selectedDate: string | null;
     selectedTime: string | null;
-    total: number;
     step: Step;
     onRemove: (serviceId: string, variantId: string) => void;
     onContinue: () => void;
     canContinue: boolean;
-    onPayAndConfirm?: () => void;
+    onPayAndConfirm: () => void;
     professional?: SelectedProfessional | null;
     stylists?: TStylist[];
-    // Waitlist
     waitlistActive?: boolean;
     waitlistEntries?: WaitlistEntry[];
     hasPaymentMethod?: boolean;
+    agreed: boolean;
+    selectedPaymentMethod: "card" | "venue" | "paypal" | null;
+    onPaymentMethodSelect: (method: "card" | "venue" | "paypal") => void;
+    finalTotal: number;
 }
 
 const listVariants: Variants = {
@@ -41,10 +42,8 @@ const itemVariants: Variants = {
 
 export default function SummaryAside({
                                          items,
-                                         selectedCount,
                                          selectedDate,
                                          selectedTime,
-                                         total,
                                          step,
                                          onRemove,
                                          onContinue,
@@ -54,16 +53,29 @@ export default function SummaryAside({
                                          stylists,
                                          waitlistActive,
                                          waitlistEntries,
-                                         hasPaymentMethod = false,
+                                         agreed,
+                                         selectedPaymentMethod,
+                                         finalTotal,
                                      }: SummaryAsideProps) {
     const {isAuthenticated, setShowLogin} = useAuth();
 
-    const handlePayClick = () => {
+    const handlePayClick = async () => {
         if (!isAuthenticated) {
             setShowLogin(true);
             return;
         }
-        onPayAndConfirm?.();
+
+        if (!agreed) {
+            toast.error("You must agree to the terms.");
+            return;
+        }
+
+        if (!selectedPaymentMethod) {
+            toast.error("Please select a payment method.");
+            return;
+        }
+
+        await onPayAndConfirm();
     };
 
     return (
@@ -186,25 +198,27 @@ export default function SummaryAside({
                 transition={{duration: 0.28, delay: 0.05}}
             >
                 <span className="font-semibold">Total</span>
-                <span className="font-semibold">${total}</span>
+                <span className="font-semibold">${finalTotal}</span>
             </motion.div>
 
             <div className="mt-4">
                 {step < 4 ? (
-                    <motion.div whileHover={{scale: 1.02}} whileTap={{scale: 0.98}}>
-                        <Button className="w-full" disabled={!canContinue} onClick={onContinue}>
-                            Continue
-                        </Button>
-                    </motion.div>
+                    <Button className="w-full" disabled={!canContinue} onClick={onContinue}>
+                        Continue
+                    </Button>
                 ) : (
-                    <motion.div whileHover={{scale: 1.02}} whileTap={{scale: 0.98}}>
-                        <Button className="w-full" onClick={handlePayClick}>
-                            Pay and Confirm
+                    <>
+                        <Button
+                            className="w-full"
+                            onClick={handlePayClick}
+                            disabled={!agreed || !selectedPaymentMethod}
+                        >
+                           Pay and Confirm • {finalTotal}
                         </Button>
-                    </motion.div>
-                )}
-                {!hasPaymentMethod && step >= 4 && (
-                    <div className="mt-2 text-sm text-red-500">Select a payment method before paying.</div>
+                        {!agreed && <p className="mt-1 text-xs text-red-500 text-center">You must agree to terms</p>}
+                        {!selectedPaymentMethod &&
+                            <p className="mt-1 text-xs text-red-500 text-center">Select payment method</p>}
+                    </>
                 )}
             </div>
         </motion.aside>

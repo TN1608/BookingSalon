@@ -8,9 +8,9 @@ export type BookingServiceItem = {
 };
 
 export type BookingPayload = {
-    userId?: string | null;
+    // userId?: string | null;
     userEmail?: string | null;
-    phone?: string | null;
+    // phone?: string | null;
     services: BookingServiceItem[];
     totalPrice: number;
     discountPercent?: number | null;

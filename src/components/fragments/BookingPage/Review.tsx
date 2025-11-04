@@ -1,7 +1,7 @@
 "use client"
 import {motion} from "framer-motion";
 import {Button} from "@/components/ui/button";
-import type {SelectedDetail} from "../../../types/types";
+import type {SelectedDetail, SelectedProfessional} from "@/types/types";
 import {MdPayments} from "react-icons/md";
 import {Input} from "@/components/ui/input";
 import {useEffect, useMemo, useState} from "react";
@@ -9,7 +9,6 @@ import {Checkbox} from "@/components/ui/checkbox";
 import {Label} from "@/components/ui/label";
 import TermDialog from "@/components/TermDialog";
 import {Textarea} from "@/components/ui/textarea";
-import DialogCardDetails from "@/components/DialogCardDetails";
 import {FaPaypal} from "react-icons/fa";
 import {useAuth} from "@/context/AuthProvider";
 import LoginDialog from "@/components/LoginDialog/LoginDialog";
@@ -22,24 +21,49 @@ interface ReviewProps {
     total: number;
     onBack: () => void;
     onConfirm: () => void;
+    professional: SelectedProfessional | null;
+    agreed: boolean;
+    selectedPaymentMethod: PaymentMethod;
+    onPaymentMethodSelect: (method: PaymentMethod) => void;
+    finalTotal: number;
+    code: string;
+    setCode: (code: string) => void;
+    appliedCode: string | null;
+    setAppliedCode: (code: string | null) => void;
+    appliedDiscount: number;
+    setAppliedDiscount: (discount: number) => void;
+    setAgreed: (agreed: boolean) => void;
+    setSelectedPaymentMethod: (method: PaymentMethod) => void;
 }
 
 type PaymentMethod = "card" | "venue" | "paypal" | null;
 
-export default function Review({items, durations, selectedDate, selectedTime, total, onBack, onConfirm}: ReviewProps) {
+export default function Review({
+                                   items,
+                                   durations,
+                                   selectedDate,
+                                   selectedTime,
+                                   total,
+                                   onBack,
+                                   onConfirm,
+                                   professional,
+                                   agreed,
+                                   selectedPaymentMethod,
+                                   onPaymentMethodSelect,
+                                   finalTotal,
+                                   code,
+                                   setCode,
+                                   appliedCode,
+                                   setAppliedCode,
+                                   appliedDiscount,
+                                   setAppliedDiscount,
+                                   setAgreed,
+                                   setSelectedPaymentMethod,
+                               }: ReviewProps) {
     const {currentUser, isAuthenticated} = useAuth();
 
     const [error, setError] = useState<string | null>(null);
-    const [code, setCode] = useState<string>("");
-    const [appliedCode, setAppliedCode] = useState<string | null>(null);
-    const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
-    const [agreed, setAgreed] = useState<boolean>(false);
-    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>(null);
     const [openLoginDialog, setOpenLoginDialog] = useState(false);
-    const [openCardAfterLogin, setOpenCardAfterLogin] = useState(false);
-
-    const finalTotal = useMemo(() => Math.max(0, total - appliedDiscount), [total, appliedDiscount]);
 
     const validateCode = (raw: string) => {
         const c = raw.trim().toUpperCase();
@@ -63,26 +87,7 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         setAppliedCode(c);
         setAppliedDiscount(20);
         return true;
-    };
-
-    // Tu dong chon card neu trong session co thong tin
-    // useEffect(() => {
-    //     if (user?.card?.number) {
-    //         // eslint-disable-next-line react-hooks/set-state-in-effect
-    //         setSelectedPaymentMethod("card");
-    //     } else {
-    //         if (selectedPaymentMethod === "card") setSelectedPaymentMethod(null);
-    //     }
-    // }, [user?.card?.number]);
-
-    // After login, if we wanted to open card dialog, do it now
-    // useEffect(() => {
-    //     if (user && openCardAfterLogin) {
-    //         // eslint-disable-next-line react-hooks/set-state-in-effect
-    //         setOpenCardAfterLogin(false);
-    //         setDialogOpen(true);
-    //     }
-    // }, [user, openCardAfterLogin]);
+    }
 
     useEffect(() => {
         if (total === 0 && appliedCode) {
@@ -99,31 +104,23 @@ export default function Review({items, durations, selectedDate, selectedTime, to
         }
     }, [appliedCode, appliedDiscount, total]);
 
-    const handleCardSave = (card: {
-        name?: string;
-        number?: string;
-        expiry?: string;
-        cvc?: string;
-        cardType?: string | null;
-    }) => {
-        setSelectedPaymentMethod("card");
-    };
-
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!agreed || !selectedPaymentMethod) {
             setError(!agreed ? "You must agree to terms." : "Select a payment method before confirming.");
-            // If user is trying to confirm with card but not logged in or missing card, route them to login/card dialog
-            if (selectedPaymentMethod === "card") {
-                if (!currentUser) {
-                    setOpenCardAfterLogin(true);
-                    setOpenLoginDialog(true);
-                    return;
-                }
+            return;
+        }
+
+        if (selectedPaymentMethod === "card") {
+            if (!isAuthenticated || !currentUser) {
+                setOpenLoginDialog(true);
+                return;
             }
             return;
         }
-        onConfirm();
-    }
+
+        await onConfirm();
+    };
+
 
     return (
         <section>
@@ -184,11 +181,6 @@ export default function Review({items, durations, selectedDate, selectedTime, to
                             card.</div>
                     )}
                 </div>
-                <DialogCardDetails
-                    open={dialogOpen}
-                    onOpenChange={setDialogOpen}
-                    onSave={handleCardSave}
-                />
                 <div className={"flex flex-col gap-2"}>
                     <h3 className={"font-semibold text-2xl"}>Discount Code</h3>
                     <div className="flex gap-2">
