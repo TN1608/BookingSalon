@@ -2,16 +2,16 @@ const {doc, setDoc, getDocs, getDoc, updateDoc, query, where, collection, delete
 const {db} = require('../lib/firebase');
 const {v4: uuid} = require('uuid');
 
-const createAppointment = async ({customerId, stylistId, startTime, duration, notes = "", status, services = [], discountPercent = 0, finalPrice}) => {
+const createAppointment = async ({customer, stylistId, startTime, duration, notes = "", status, services = [], discountPercent = 0, finalPrice}) => {
     const appointmentId = uuid();
     const createdAt = new Date().toISOString();
     const start = new Date(startTime);
     const end = new Date(start.getTime() + (duration || 0) * 60000);
 
-    const appointmentRef = doc(db, 'appointments');
+    const appointmentRef = doc(db, 'appointments', appointmentId);
     await setDoc(appointmentRef, {
         appointmentId,
-        customerId,
+        customer,
         stylistId,
         finalPrice,
         startTime: start.toISOString(),
