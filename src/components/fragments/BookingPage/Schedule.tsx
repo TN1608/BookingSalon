@@ -94,137 +94,185 @@ export default function Schedule({
 
 
     return (
-        <section className={"min-h-screen"}>
-            <h2 className="text-2xl font-semibold">Choose date & time</h2>
+        <motion.section
+            initial={{opacity: 0}}
+            animate={{opacity: 1}}
+            transition={{duration: 0.3}}
+            className={"min-h-screen"}
+        >
+            <motion.h2
+                initial={{opacity: 0, y: -10}}
+                animate={{opacity: 1, y: 0}}
+                transition={{duration: 0.4}}
+                className="text-2xl font-semibold"
+            >
+                Choose date & time
+            </motion.h2>
 
-            <ScrollArea className="mt-6 p-4 border rounded-2xl">
-                <div className="flex gap-3 min-w-max p-2">
-                    {days.map((d) => {
-                        const active = selectedDate === d.key;
-                        const isDisable = isUnavailable(d.key);
+            <motion.div
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                transition={{duration: 0.5, delay: 0.1}}
+            >
+                <ScrollArea className="mt-6 p-4 border rounded-2xl">
+                    <div className="flex gap-3 min-w-max p-2">
+                        {days.map((d) => {
+                            const active = selectedDate === d.key
+                            const isDisable = isUnavailable(d.key)
+                            const dateObj = new Date(d.key)
+                            const dayNum = String(dateObj.getDate())
+                            const weekday = dateObj.toLocaleDateString(undefined, {weekday: "short"})
 
-                        // derive day number + weekday from the ISO key
-                        const dateObj = new Date(d.key);
-                        const dayNum = String(dateObj.getDate());
-                        const weekday = dateObj.toLocaleDateString(undefined, {weekday: "short"});
-
-                        return (
-                            <motion.div
-                                key={d.key}
-                                className="flex flex-col items-center"
-                                whileHover={!isDisable ? {y: -2} : undefined}
-                                whileTap={!isDisable ? {scale: 0.95} : undefined}
-                            >
-                                <button
-                                    // clickable even when unavailable so banner will show
-                                    onClick={() => {
-                                        setSelectedDate(d.key);
-                                        setSelectedTime("");
-                                    }}
-                                    aria-disabled={isDisable}
-                                    className={`
-                                        w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold
-                                        transition-all duration-200 relative
-                                        ${isDisable
-                                        ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 cursor-pointer"
-                                        : active
-                                            ? "bg-violet-600 text-white shadow-lg ring-4 ring-violet-600/30"
-                                            : "bg-white text-gray-900 border border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                    }
-                                    `}
+                            return (
+                                <motion.div
+                                    key={d.key}
+                                    className="flex flex-col items-center"
+                                    whileHover={!isDisable ? {y: -4, scale: 1.05} : undefined}
+                                    whileTap={!isDisable ? {scale: 0.95} : undefined}
+                                    layout
                                 >
-                                    {dayNum}
-                                    {isDisable && !active && (
-                                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-rose-500"/>
-                                    )}
-                                </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedDate(d.key)
+                                            setSelectedTime("")
+                                        }}
+                                        aria-disabled={isDisable}
+                                        className={`
+                                            w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold
+                                            transition-all duration-200 relative
+                                            ${
+                                            isDisable
+                                                ? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 cursor-pointer"
+                                                : active
+                                                    ? "bg-violet-600 text-white shadow-lg ring-4 ring-violet-600/30"
+                                                    : "bg-white text-gray-900 border border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                        }
+                                        `}
+                                    >
+                                        {dayNum}
+                                        {isDisable && !active && (
+                                            <motion.span
+                                                initial={{scale: 0}}
+                                                animate={{scale: 1}}
+                                                className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-rose-500"
+                                            />
+                                        )}
+                                    </button>
 
-                                <span
-                                    className={`
-                                        mt-1 text-xs font-medium
-                                        ${active
-                                        ? "text-violet-600 dark:text-violet-400"
-                                        : isDisable
-                                            ? "text-gray-400 dark:text-gray-600"
-                                            : "text-gray-600 dark:text-gray-400"
-                                    }
-                                    `}
-                                >
-                                    {weekday}
-                                </span>
-                            </motion.div>
-                        );
-                    })}
-                </div>
-                <ScrollBar orientation="horizontal"/>
-            </ScrollArea>
+                                    <span
+                                        className={`
+                                            mt-1 text-xs font-medium
+                                            ${
+                                            active
+                                                ? "text-violet-600 dark:text-violet-400"
+                                                : isDisable
+                                                    ? "text-gray-400 dark:text-gray-600"
+                                                    : "text-gray-600 dark:text-gray-400"
+                                        }
+                                        `}
+                                    >
+                    {weekday}
+                  </span>
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                    <ScrollBar orientation="horizontal"/>
+                </ScrollArea>
+            </motion.div>
 
-            {/* Unavailable date banner or time slots */}
             {(() => {
-                const isUnavailable = !!selectedDate && unavailableDates.includes(selectedDate);
+                const isUnavailable = !!selectedDate && unavailableDates.includes(selectedDate)
                 if (isUnavailable) {
-                    const nextKey = selectedDate ? nextAvailableMap[selectedDate] : undefined;
-                    const nextLabel = nextKey ? (days.find(d => d.key === nextKey)?.label || nextKey) : undefined;
+                    const nextKey = selectedDate ? nextAvailableMap[selectedDate] : undefined
+                    const nextLabel = nextKey ? days.find((d) => d.key === nextKey)?.label || nextKey : undefined
                     return (
-                        <div
-                            className="mt-6 border rounded-2xl p-8 sm:p-10 bg-white/60 dark:bg-neutral-900/60 border-zinc-200 dark:border-zinc-800">
+                        <motion.div
+                            initial={{opacity: 0, y: 20}}
+                            animate={{opacity: 1, y: 0}}
+                            transition={{duration: 0.4, delay: 0.2}}
+                            className="mt-6 border rounded-2xl p-8 sm:p-10 bg-white/60 dark:bg-neutral-900/60 border-zinc-200 dark:border-zinc-800"
+                        >
                             <div className="flex flex-col items-center text-center gap-4">
                                 {(() => {
-                                    const selectedStylist = stylists?.find(s => s.id === selectedStylistId);
-                                    const initials = selectedStylist?.name ? selectedStylist.name.slice(0, 1) : "PRO";
+                                    const selectedStylist = stylists?.find((s) => s.id === selectedStylistId)
+                                    const initials = selectedStylist?.name ? selectedStylist.name.slice(0, 1) : "PRO"
                                     return (
-                                        <div
-                                            className="h-14 w-14 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden grid place-items-center text-sm font-semibold">
+                                        <motion.div
+                                            initial={{scale: 0}}
+                                            animate={{scale: 1}}
+                                            transition={{duration: 0.3, delay: 0.3}}
+                                            className="h-14 w-14 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden grid place-items-center text-sm font-semibold"
+                                        >
                                             {initials}
-                                        </div>
-                                    );
+                                        </motion.div>
+                                    )
                                 })()}
-                                <div>
+                                <motion.div
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
+                                    transition={{duration: 0.4, delay: 0.35}}
+                                >
                                     {(() => {
-                                        const selectedStylist = stylists?.find(s => s.id === selectedStylistId);
-                                        const name = selectedStylist?.name;
+                                        const selectedStylist = stylists?.find((s) => s.id === selectedStylistId)
+                                        const name = selectedStylist?.name
                                         return (
-                                            <div
-                                                className="text-xl sm:text-2xl font-semibold">{name ? `${name} is fully booked on this date` : "Fully booked on this date"}</div>
-                                        );
+                                            <div className="text-xl sm:text-2xl font-semibold">
+                                                {name ? `${name} is fully booked on this date` : "Fully booked on this date"}
+                                            </div>
+                                        )
                                     })()}
-                                    {nextLabel && (
-                                        <div className="text-sm text-muted-foreground mt-1">Available
-                                            from {nextLabel}</div>
-                                    )}
-                                </div>
-                                <div className="flex gap-3 mt-2 flex-wrap justify-center">
+                                    {nextLabel && <div className="text-sm text-muted-foreground mt-1">Available
+                                        from {nextLabel}</div>}
+                                </motion.div>
+                                <motion.div
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
+                                    transition={{duration: 0.4, delay: 0.4}}
+                                    className="flex gap-3 mt-2 flex-wrap justify-center"
+                                >
                                     {nextKey && (
-                                        <Button variant="outline" onClick={() => setSelectedDate(nextKey)}>Go to next
-                                            available date</Button>
+                                        <Button variant="outline" onClick={() => setSelectedDate(nextKey)}>
+                                            Go to next available date
+                                        </Button>
                                     )}
-                                    <Button variant="outline" onClick={() => setProDialogOpen(true)}>Check all
-                                        professionals</Button>
-                                </div>
+                                    <Button variant="outline" onClick={() => setProDialogOpen(true)}>
+                                        Check all professionals
+                                    </Button>
+                                </motion.div>
                                 <div className="w-full h-px bg-zinc-200 dark:bg-zinc-800 my-6"/>
-                                <p className="text-sm text-muted-foreground">You can <span
-                                    className="text-primary font-semibold transition hover:underline cursor-pointer"
-                                    onClick={() => {
-                                        setWaitlistActive(true)
-                                    }}>join the waitlist</span> instead</p>
+                                <p className="text-sm text-muted-foreground">
+                                    You can{" "}
+                                    <span
+                                        className="text-primary font-semibold transition hover:underline cursor-pointer"
+                                        onClick={() => setWaitlistActive(true)}
+                                    >
+                    join the waitlist
+                  </span>{" "}
+                                    instead
+                                </p>
                             </div>
-                        </div>
-                    );
+                        </motion.div>
+                    )
                 }
-                // else show time slots
+
                 return (
                     <>
-                        <motion.div variants={container} initial="hidden" animate="show"
-                                    className="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                        <motion.div
+                            variants={container}
+                            initial="hidden"
+                            animate="show"
+                            className="mt-6 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3"
+                        >
                             {timeSlots.map((t) => {
-                                const disabled = false; // hook up availability later
-                                const active = selectedTime === t;
+                                const disabled = false
+                                const active = selectedTime === t
                                 return (
                                     <motion.button
                                         key={t}
                                         variants={fade}
-                                        whileHover={!disabled ? {scale: 1.02} : undefined}
-                                        whileTap={!disabled ? {scale: 0.98} : undefined}
+                                        whileHover={!disabled ? {scale: 1.05, y: -2} : undefined}
+                                        whileTap={!disabled ? {scale: 0.95} : undefined}
                                         disabled={disabled}
                                         onClick={() => setSelectedTime(t)}
                                         className={`px-3 py-2 rounded-lg border text-sm ${
@@ -235,28 +283,42 @@ export default function Schedule({
                                     >
                                         {t}
                                     </motion.button>
-                                );
+                                )
                             })}
                         </motion.div>
-                        <div className={"flex justify-center "}>
-                            <p className={"text-sm text-muted-foreground mt-2"}>Can’t find a suitable time? <span
-                                className={"text-primary font-semibold transition hover:underline cursor-pointer"}
-                                onClick={() => {
-                                    setWaitlistActive(true)
-                                }}>Join waitlist</span></p>
-                        </div>
+                        <motion.div
+                            initial={{opacity: 0}}
+                            animate={{opacity: 1}}
+                            transition={{duration: 0.4, delay: 0.3}}
+                            className={"flex justify-center"}
+                        >
+                            <p className={"text-sm text-muted-foreground mt-2"}>
+                                Can't find a suitable time?{" "}
+                                <span
+                                    className={"text-primary font-semibold transition hover:underline cursor-pointer"}
+                                    onClick={() => setWaitlistActive(true)}
+                                >
+                  Join waitlist
+                </span>
+                            </p>
+                        </motion.div>
                     </>
-                );
+                )
             })()}
 
-            <div className="mt-6 flex items-center justify-between">
+            <motion.div
+                initial={{opacity: 0, y: 20}}
+                animate={{opacity: 1, y: 0}}
+                transition={{duration: 0.4, delay: 0.4}}
+                className="mt-6 flex items-center justify-between"
+            >
                 <Button variant="outline" onClick={onBack}>
                     Back
                 </Button>
                 <Button disabled={!canContinue} onClick={onContinue}>
                     Continue
                 </Button>
-            </div>
+            </motion.div>
 
             <ServiceProDialog
                 open={proDialogOpen}
@@ -265,17 +327,17 @@ export default function Schedule({
                 stylists={stylists}
                 selectedStylistId={selectedStylistId}
                 onSelectAny={() => {
-                    onSelectAny && onSelectAny();
-                    setProDialogOpen(false);
+                    onSelectAny && onSelectAny()
+                    setProDialogOpen(false)
                 }}
                 onSelectStylist={(id) => {
-                    onSelectStylist && onSelectStylist(id);
-                    setProDialogOpen(false);
+                    onSelectStylist && onSelectStylist(id)
+                    setProDialogOpen(false)
                 }}
                 onViewProfile={(id) => {
-                    onViewProfile && onViewProfile(id);
+                    onViewProfile && onViewProfile(id)
                 }}
             />
-        </section>
+        </motion.section>
     );
 }
