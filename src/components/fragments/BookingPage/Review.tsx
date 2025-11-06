@@ -34,6 +34,8 @@ interface ReviewProps {
     setAppliedDiscount: (discount: number) => void;
     setAgreed: (agreed: boolean) => void;
     setSelectedPaymentMethod: (method: PaymentMethod) => void;
+    note: string;
+    setNote: (note: string) => void;
 }
 
 type PaymentMethod = "card" | "venue" | "paypal" | null;
@@ -59,6 +61,8 @@ export default function Review({
                                    setAppliedDiscount,
                                    setAgreed,
                                    setSelectedPaymentMethod,
+                                   note,
+                                   setNote,
                                }: ReviewProps) {
     const {currentUser, isAuthenticated} = useAuth();
 
@@ -115,7 +119,6 @@ export default function Review({
                 setOpenLoginDialog(true);
                 return;
             }
-            return;
         }
 
         await onConfirm();
@@ -272,7 +275,9 @@ export default function Review({
                 <div className="*:not-first:mt-2">
                     <Label className={"text-xl"}>Booking Note</Label>
                     <Textarea placeholder="Include comments or requests about your booking."
-                              className={"min-h-[100px] w-xl"}/>
+                              className={"min-h-[100px] w-xl"}
+                        onChange={(e) => setNote(e.target.value)} value={note}
+                    />
                 </div>
 
                 <div className="flex items-center mt-4 gap-2">

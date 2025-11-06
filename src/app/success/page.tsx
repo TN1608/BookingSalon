@@ -33,10 +33,8 @@ export default function SuccessPage() {
         const handler = (e: MessageEvent) => {
             try {
                 const data = JSON.parse(e.data);
-                console.log("Parsed data:", data);
 
                 if (data.status === "confirmed") {
-                    console.log("CONFIRMED! Saving to localStorage & set success");
 
                     localStorage.setItem(`booking_${appointmentId}`, "confirmed");
 

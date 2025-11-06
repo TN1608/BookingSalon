@@ -48,6 +48,7 @@ export default function BookingPage() {
     const [code, setCode] = useState<string>("");
     const [appliedCode, setAppliedCode] = useState<string | null>(null);
     const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+    const [note, setNote] = useState<string>("");
 
     const selectedDetails = useMemo(
         () =>
@@ -322,7 +323,7 @@ export default function BookingPage() {
             startTime: selectedDate ? `${selectedDate}T${selectedTime ?? "00:00:00"}` : null,
             totalDuration: durations,
             stylist: professional?.mode === "stylist" ? { id: professional.stylistId } : professional?.mode === "perService" ? null : null,
-            notes: "",
+            notes: note,
         };
 
         try {
@@ -495,6 +496,8 @@ export default function BookingPage() {
                                         appliedDiscount={appliedDiscount}
                                         setAgreed={setAgreed}
                                         setSelectedPaymentMethod={setSelectedPaymentMethod}
+                                        note={note}
+                                        setNote={setNote}
                                     />
                                 )
                             )}
