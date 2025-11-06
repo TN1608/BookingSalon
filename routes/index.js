@@ -5,7 +5,9 @@ const TransactionRouter = require('./transaction');
 const AuthRouter = require('./auth');
 const CheckoutRouter = require('./checkout');
 const SseRouter = require('./sse');
+const WaitlistRouter = require('./waitlist');
 
+router.use('/', WaitlistRouter);
 router.use('/', TransactionRouter);
 router.use('/', AuthRouter);
 router.use('/', CheckoutRouter);
