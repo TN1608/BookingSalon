@@ -37,7 +37,9 @@ export default function BookingPage() {
 
     // Waitlist
     const [waitlistActive, setWaitlistActive] = useState(false);
-    const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([{}]);
+    const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([
+        { date: undefined, time: "Any time", startTime: "", endTime: "" },
+    ]);
     const [fromWaitlist, setFromWaitlist] = useState(false)
 
     const [profileOpen, setProfileOpen] = useState(false);
@@ -100,8 +102,6 @@ export default function BookingPage() {
             setSelected(value);
         }
     }
-
-
 
     const isAbove = useMemo(() => selectedDetails.length >= 2, [selectedDetails]);
 
@@ -257,6 +257,23 @@ export default function BookingPage() {
 
     const canContinueFromSchedule = waitlistActive ? (hasSelectedWaitlistsDate && !hasAvailableNow) : Boolean(selectedDate && selectedTime);
 
+    const handleWaitlistChange = (index: number, patch: Partial<WaitlistEntry>) => {
+        setWaitlistEntries((prev) => {
+            const newEntries = [...prev];
+            newEntries[index] = { ...newEntries[index], ...patch };
+            return newEntries;
+        });
+    };
+
+    const handleWaitlistAdd = () =>
+        setWaitlistEntries((prev) => [
+            ...prev,
+            { date: undefined, time: "Any time", startTime: "", endTime: "" },
+        ]);
+
+    const handleWaitlistRemove = (index: number) =>
+        setWaitlistEntries((prev) => prev.filter((_, i) => i !== index));
+
     const handleWaitlist = async () => {
         try {
             if (!currentUser?.email) {
@@ -297,6 +314,7 @@ export default function BookingPage() {
             toast.error("Failed to book now.");
         }
     }
+
     const handleBookNow = (date: Date) => {
         const key = date.toISOString().slice(0, 10);
         setWaitlistActive(false)
@@ -448,11 +466,9 @@ export default function BookingPage() {
                                         waitlistActive={waitlistActive}
                                         setWaitlistActive={setWaitlistActive}
                                         waitlistEntries={waitlistEntries}
-                                        onWaitlistChange={(index, patch) => {
-                                            setWaitlistEntries((prev) => prev.map((e, i) => i === index ? {...e, ...patch} : e));
-                                        }}
-                                        onWaitlistAdd={() => setWaitlistEntries((prev) => [...prev, {}])}
-                                        onWaitlistRemove={(index) => setWaitlistEntries((prev) => prev.filter((_, i) => i !== index))}
+                                        onWaitlistChange={handleWaitlistChange}
+                                        onWaitlistAdd={handleWaitlistAdd}
+                                        onWaitlistRemove={handleWaitlistRemove}
                                         canContinueWaitlist={waitlistEntries.some((e) => !!e.date)}
                                         onSelectAny={() => handleSelectAny()}
                                         onSelectStylist={(id) => handleSelectStylist(id)}
