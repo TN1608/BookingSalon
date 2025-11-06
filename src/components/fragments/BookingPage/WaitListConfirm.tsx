@@ -1,8 +1,8 @@
 // src/components/fragments/BookingPage/WaitlistConfirm.tsx
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import type { SelectedDetail, WaitlistEntry } from "../../../types/types";
-import { format } from "date-fns";
+import {Button} from "@/components/ui/button";
+import {motion} from "framer-motion";
+import type {SelectedDetail, WaitlistEntry} from "@/types/types";
+import {format} from "date-fns";
 
 interface WaitlistConfirmProps {
     items: SelectedDetail[];
@@ -48,11 +48,11 @@ export default function WaitlistConfirm({
             <div className="mt-4 rounded-2xl border p-4">
                 <h3 className="font-semibold">Services</h3>
                 <ul className="mt-2 text-sm">
-                    {items.map(({ service, variant }) => (
+                    {items.map(({service, variant}) => (
                         <li key={`${service.id}-${variant.id}`} className="flex items-center justify-between py-1">
-              <span>
-                {service.name} — {variant.name}
-              </span>
+                              <span>
+                                {service.name} — {variant.name}
+                              </span>
                             <span className="text-zinc-600 dark:text-zinc-400">${variant.price}</span>
                         </li>
                     ))}

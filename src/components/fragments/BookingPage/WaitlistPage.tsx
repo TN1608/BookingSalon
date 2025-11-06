@@ -146,9 +146,9 @@ export default function WaitlistPage({
                                                         variant="outline"
                                                         className="group w-full justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background focus-visible:outline-[3px]"
                                                     >
-                          <span className={cn("truncate", !row.time && "text-muted-foreground")}>
-                            {row.time ?? "Any time"}
-                          </span>
+                                                          <span className={cn("truncate", !row.time && "text-muted-foreground")}>
+                                                            {row.time ?? "Any time"}
+                                                          </span>
                                                         <span className="text-muted-foreground">▾</span>
                                                     </Button>
                                                 </motion.div>

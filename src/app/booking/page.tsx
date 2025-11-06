@@ -21,6 +21,7 @@ import {useAuth} from "@/context/AuthProvider";
 import {BookingPayload, checkout} from "@/services/checkout";
 import {useRouter} from "next/navigation";
 import {openSSE} from "@/services/sse";
+import {createWaitList, sendEmailWaitlist, WaitlistPayload} from "@/services/waitlist";
 
 export default function BookingPage() {
     const {showLogin, setShowLogin, currentUser} = useAuth();
@@ -38,7 +39,7 @@ export default function BookingPage() {
     // Waitlist
     const [waitlistActive, setWaitlistActive] = useState(false);
     const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([
-        { date: undefined, time: "Any time", startTime: "", endTime: "" },
+        {date: undefined, time: "Any time", startTime: "", endTime: ""},
     ]);
     const [fromWaitlist, setFromWaitlist] = useState(false)
 
@@ -260,7 +261,7 @@ export default function BookingPage() {
     const handleWaitlistChange = (index: number, patch: Partial<WaitlistEntry>) => {
         setWaitlistEntries((prev) => {
             const newEntries = [...prev];
-            newEntries[index] = { ...newEntries[index], ...patch };
+            newEntries[index] = {...newEntries[index], ...patch};
             return newEntries;
         });
     };
@@ -268,47 +269,47 @@ export default function BookingPage() {
     const handleWaitlistAdd = () =>
         setWaitlistEntries((prev) => [
             ...prev,
-            { date: undefined, time: "Any time", startTime: "", endTime: "" },
+            {date: undefined, time: "Any time", startTime: "", endTime: ""},
         ]);
 
     const handleWaitlistRemove = (index: number) =>
         setWaitlistEntries((prev) => prev.filter((_, i) => i !== index));
 
     const handleWaitlist = async () => {
+        const services = selectedDetails.map((d) => ({
+            name: d.service.name,
+            description: d.variant.name,
+            quantity: 1,
+            price: d.variant.price,
+        }))
+
+        const payload: WaitlistPayload = {
+            customer: currentUser?.email,
+            stylist: professional?.mode === "stylist" ? {id: professional.stylistId} : professional?.mode === "perService" ? null : null,
+            services,
+            entry: waitlistEntries,
+            total: finalTotal,
+        }
+
+        await createWaitList(payload)
+
         try {
-            if (!currentUser?.email) {
-                toast.error("No email available to send confirmation.");
-                window.location.href = "/success";
-                return;
+            const data = {
+                to: currentUser?.email,
+                name: currentUser?.fullName,
+                date: waitlistEntries.map(e => e.date ? e.date.toISOString().slice(0, 10) : "Any date").join(", "),
+                time: waitlistEntries.map(e => e.time ?? "Any time").join(", "),
+                serviceName: selectedDetails.map((d) => d.service.name).join(", "),
+                staffName: professional?.mode === "stylist"
+                    ? STYLISTS.find((s) => s.id === professional.stylistId)?.name || "—"
+                    : professional?.mode === "perService"
+                        ? "Multiple Stylists"
+                        : "—",
             }
-            await fetch('/api/send-waitlist-email', {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    to: currentUser.email,
-                    name: currentUser?.fullName ?? "Customer",
-                    date: selectedDate,
-                    time: selectedTime,
-                    serviceName: selectedDetails.map((d) => d.service.name).join(", "),
-                }),
+            await sendEmailWaitlist(data).then(() => {
+                toast.success("Waitlist confirmation email sent.");
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Failed to send confirmation email.");
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log("Email sent successfully:", data);
-                    toast.success("Confirmation email sent.");
-                })
-                .catch((error) => {
-                    console.error("Send confirmation failed:", error);
-                    toast.error("Failed to send confirmation email.");
-                });
-            toast.success("Confirmation email sent.");
+            router.push('/waitlist-success')
         } catch (err) {
             console.error("Failed to book now:", err);
             toast.error("Failed to book now.");
@@ -340,15 +341,14 @@ export default function BookingPage() {
             discountPercent: 0,
             startTime: selectedDate ? `${selectedDate}T${selectedTime ?? "00:00:00"}` : null,
             totalDuration: durations,
-            stylist: professional?.mode === "stylist" ? { id: professional.stylistId } : professional?.mode === "perService" ? null : null,
+            stylist: professional?.mode === "stylist" ? {id: professional.stylistId} : professional?.mode === "perService" ? null : null,
             notes: note,
         };
 
         try {
             const resp = await checkout(payload);
             const {appointmentId, url} = resp.data;
-            console.log("Checkout response:", resp);
-            await openSSE(resp.data.appointmentId);
+            openSSE(appointmentId);
 
             router.push(url)
         } catch (err: any) {
@@ -357,35 +357,21 @@ export default function BookingPage() {
             return;
         }
         try {
-            await fetch("/api/send-email", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    to: currentUser?.email,
-                    name: currentUser?.fullName ?? "Customer",
-                    date: selectedDate,
-                    time: selectedTime,
-                    staffName: professional?.mode === "stylist"
-                        ? STYLISTS.find((s) => s.id === professional.stylistId)?.name || "—"
-                        : professional?.mode === "perService"
-                            ? "Multiple Stylists"
-                            : "—",
-                    serviceName: selectedDetails.map((d) => d.service.name).join(", "),
-                }),
+            const data = {
+                to: currentUser?.email,
+                name: currentUser?.fullName ?? "Customer",
+                date: waitlistEntries.map(e => e.date ? e.date.toISOString().slice(0, 10) : "Any date").join(", "),
+                time: waitlistEntries.map(e => e.time ?? "Any time").join(", "),
+                staffName: professional?.mode === "stylist"
+                    ? STYLISTS.find((s) => s.id === professional.stylistId)?.name || "—"
+                    : professional?.mode === "perService"
+                        ? "Multiple Stylists"
+                        : "—",
+                serviceName: selectedDetails.map((d) => d.service.name).join(", "),
+            }
+            await sendEmailWaitlist(data).then(() => {
+                toast.success("Booking confirmation email sent.");
             })
-                .then((response) => {
-                    if (!response.ok) {
-                        throw new Error("Failed to send confirmation email.");
-                    }
-                    return response.json();
-                })
-                .catch((error) => {
-                    console.error("Send confirmation failed:", error);
-                    toast.error("Failed to send confirmation email.");
-                });
-            toast.success("Confirmation email sent.");
         } catch (err) {
             console.error("Send confirmation failed:", err);
             toast.error("Failed to send confirmation email.");
