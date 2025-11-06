@@ -1,23 +1,16 @@
-import {useId, useRef, useEffect, useState} from "react"
-import {CreditCardIcon, WalletIcon} from "lucide-react"
-import {usePaymentInputs} from "react-payment-inputs"
-import images, {type CardImages} from "react-payment-inputs/images"
+import { useState} from "react"
+
 
 import {Button} from "@/components/ui/button"
-import {Checkbox} from "@/components/ui/checkbox"
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+
 } from "@/components/ui/dialog"
 import {Input} from "@/components/ui/input"
 import {Label} from "@/components/ui/label"
 
-import {FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard} from "react-icons/fa"
 import {CardElement, useElements, useStripe} from "@stripe/react-stripe-js";
-import StripeCardInput from "@/components/StripeCardInput";
 
 // type CardDetails = {
 //     name?: string
@@ -139,12 +132,7 @@ export default function DialogCardDetails({ open, onOpenChange, onSave }: Props)
                         {/* Card Element */}
                         <div>
                             <Label>Card details</Label>
-                            <StripeCardInput
-                                onChange={(e) => {
-                                    setCardComplete(e.complete);
-                                    setError(e.error?.message || null);
-                                }}
-                            />
+
                             {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
                         </div>
                     </div>
