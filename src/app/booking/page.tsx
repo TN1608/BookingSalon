@@ -20,6 +20,7 @@ import LoginDialog from "@/components/LoginDialog/LoginDialog";
 import {useAuth} from "@/context/AuthProvider";
 import {BookingPayload, checkout} from "@/services/checkout";
 import {useRouter} from "next/navigation";
+import {openSSE} from "@/services/sse";
 
 export default function BookingPage() {
     const {showLogin, setShowLogin, currentUser} = useAuth();
@@ -326,7 +327,11 @@ export default function BookingPage() {
 
         try {
             const resp = await checkout(payload);
-            router.push(resp.data)
+            const {appointmentId, url} = resp.data;
+            console.log("Checkout response:", resp);
+            await openSSE(resp.data.appointmentId);
+
+            router.push(url)
         } catch (err: any) {
             console.error("Checkout error:", err);
             toast.error(err?.message || "Failed to start checkout.");
@@ -368,7 +373,6 @@ export default function BookingPage() {
         }
         // window.location.href = "/success"
     }
-
 
     return (
         <div

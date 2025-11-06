@@ -1,12 +1,25 @@
-import ApiResponse from "@/types/ApiResponse";
-import api from "@/lib/axios";
+let eventSource: EventSource | null = null;
 
-export const connectSSE = async (appointmentId: string): Promise<ApiResponse> => {
-    try{
-        const response = await api.get(`/sse/appointments/${appointmentId}`);
-        return response.data;
-    }catch (err) {
-        console.error('Error during SSE connection:', err);
-        throw new Error('SSE connection failed');
-    }
-}
+export const openSSE = (appointmentId: string) => {
+    if (eventSource) eventSource.close();
+
+    eventSource = new EventSource(
+        `http://localhost:8080/api/sse/appointments/${appointmentId}`
+    );
+
+    localStorage.setItem(`booking_${appointmentId}`, "confirmed");
+
+    eventSource.addEventListener("appointment.update", (e) => {
+        try {
+            const data = JSON.parse(e.data);
+            if (data.status === "confirmed") {
+                eventSource?.close();
+            }
+        } catch (err) {}
+    });
+
+    eventSource.onerror = () => {
+        console.error("SSE error");
+        eventSource?.close();
+    };
+};
