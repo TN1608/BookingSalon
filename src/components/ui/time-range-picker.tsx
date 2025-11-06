@@ -68,7 +68,7 @@ export function TimeRangePicker({
                 : "Select time"
 
     return (
-        <div className="space-y-4 p-4 bg-background rounded-lg border border-border">
+        <div className="space-y-4 p-4 rounded-lg border border-border">
             {/* Display Range */}
             <div className="text-center">
                 <p className="text-lg font-semibold">{displayRange}</p>

@@ -38,7 +38,7 @@ export default function WaitlistPage({
                                          onBookNow,
                                      }: WaitlistPageProps) {
     const baseId = useId()
-    const containerId = useId()
+    // const containerId = useId()
     const availableEntries = entries.filter((r) => r.date && availableDates.includes(r.date.toISOString().slice(0, 10)))
     const firstAvailableDate = availableEntries.length > 0 ? availableEntries[0].date! : undefined
     const availableCount = availableEntries.length
@@ -91,7 +91,7 @@ export default function WaitlistPage({
                         const itemKey = `${row.date?.getTime() ?? "no-date"}-${row.startTime ?? "s"}-${row.endTime ?? "e"}-${idx}`
                         const dateInputId = `${baseId}-date-${idx}`
                         const timeInputId = `${baseId}-time-${idx}`
-                        const isAvailableNow = !!row.date && availableDates.includes(row.date.toISOString().slice(0, 10))
+                        // const isAvailableNow = !!row.date && availableDates.includes(row.date.toISOString().slice(0, 10))
                         return (
                             <motion.div
                                 key={itemKey}
