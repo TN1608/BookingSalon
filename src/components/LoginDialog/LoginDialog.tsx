@@ -25,16 +25,11 @@ interface LoginDialogProps {
     onOpenChange: (v: boolean) => void;
 }
 
-type SignInValues = {
-    email: string;
-    password: string;
-}
-
-type SignUpValues = {
-    fullName: string;
-    email: string;
-    password: string;
-    passwordConfirm?: string;
+type FormValues = {
+    fullName?: string
+    email: string
+    password: string
+    passwordConfirm?: string
 }
 
 type View = "signIn" | "signUp" | "otp"
@@ -47,12 +42,26 @@ export default function LoginDialog({openLogin, onOpenChange}: LoginDialogProps)
     const [view, setView] = useState<View>("signIn")
 
     const {login} = useAuth();
-    const loginMethod = useForm<SignInValues>({defaultValues: {email: "", password: ""}})
-    const signUpMethod = useForm<SignUpValues>({defaultValues: {email: "", password: "", fullName: ""}})
+    const loginMethod = useForm<FormValues>({
+        defaultValues: {
+            email: "",
+            password: "",
+            fullName: "",
+            passwordConfirm: ""
+        }
+    })
+    const signUpMethod = useForm<FormValues>({
+        defaultValues: {
+            email: "",
+            password: "",
+            fullName: "",
+            passwordConfirm: ""
+        }
+    })
     const methods = view === "signIn" ? loginMethod : signUpMethod
     const {handleSubmit} = methods
 
-    const onSubmit = async (values: SignInValues) => {
+    const onSubmit = async (values: FormValues) => {
         setError(null)
         setLoading(true)
 
@@ -70,11 +79,12 @@ export default function LoginDialog({openLogin, onOpenChange}: LoginDialogProps)
         }
     }
 
-    const onSignUp = async (values: SignUpValues) => {
+    const onSignUp = async (values: FormValues) => {
         setError(null)
         setLoading(true)
         try {
-            await registerApi(values.fullName, values.email, values.password)
+            // normalize optional fullName
+            await registerApi(values.fullName ?? "", values.email, values.password)
             toast("Registration successful! Please log in.")
             setView("signIn")
         } catch (err: unknown) {
