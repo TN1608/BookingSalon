@@ -1,4 +1,6 @@
 const express = require('express');
+const router = express.Router();
+
 const bodyParser = require('body-parser');
 const Stripe = require('stripe');
 const { doc, updateDoc, serverTimestamp } = require('firebase/firestore');
@@ -7,14 +9,12 @@ const {notifyAppointmentUpdate} = require("../controllers/sse");
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-const router = express.Router();
 
 const rawJson = bodyParser.raw({ type: 'application/json' });
 
-router.post('/webhook', rawJson, async (req, res) => {
+exports.webhook = async (req, res) => {
     const sig = req.headers['stripe-signature'];
     let event;
-
     try {
         event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
@@ -69,6 +69,4 @@ router.post('/webhook', rawJson, async (req, res) => {
         console.error('Error handling webhook event:', err);
         res.status(500).send('Internal Server Error');
     }
-});
-
-module.exports = router;
+}

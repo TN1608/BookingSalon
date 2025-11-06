@@ -10,12 +10,12 @@ const {
     serverTimestamp,
     collection,
 } = require('firebase/firestore');
-const { db } = require('../lib/firebase');
+const {db} = require('../lib/firebase');
 const passport = require('passport');
-const { createAppointment } = require('../models/appointment');
+const {createAppointment} = require('../models/appointment');
 
 exports.checkoutSession = [
-    passport.authenticate('jwt', { session: false }),
+    passport.authenticate('jwt', {session: false}),
     async (req, res) => {
         const {
             // userId,
@@ -99,10 +99,15 @@ exports.checkoutSession = [
             });
 
             // return res.status(200).json({ data: session.id });
-            return res.status(200).json({ data: session.url });
+            return res.status(200).json({
+                data: {
+                    appointmentId: String(appointmentRef),
+                    url: session.url,
+                }
+            });
         } catch (err) {
             console.error('Error creating checkout session:', err);
-            return res.status(500).json({ error: 'Failed to create checkout session' });
+            return res.status(500).json({error: 'Failed to create checkout session'});
         }
     },
 ];
@@ -110,7 +115,7 @@ exports.checkoutSession = [
 exports.syncItems = async (req, res) => {
     try {
         const itemsSnapshot = await getDocs(collection(db, 'items'));
-        const items = itemsSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const items = itemsSnapshot.docs.map(d => ({id: d.id, ...d.data()}));
 
         for (const item of items) {
             const priceCents = Math.round((item.price || 0) * 100);
@@ -132,9 +137,9 @@ exports.syncItems = async (req, res) => {
             });
         }
 
-        return res.status(200).json({ message: 'Products synced successfully' });
+        return res.status(200).json({message: 'Products synced successfully'});
     } catch (err) {
         console.error('Error syncing products:', err);
-        return res.status(500).json({ error: 'Failed to sync products' });
+        return res.status(500).json({error: 'Failed to sync products'});
     }
 };
