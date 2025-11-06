@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 type View = "signIn" | "signUp" | "otp"
 
 type FormValues = {
-    fullName: string
+    fullName?: string
     email: string
     password: string
     passwordConfirm?: string
@@ -15,7 +15,7 @@ type FormValues = {
 
 interface Props {
     setView: (v: View) => void
-    methods: UseFormReturn<any>
+    methods: UseFormReturn<FormValues>
     onSubmit: (e?: React.BaseSyntheticEvent) => Promise<void> | void
     loading: boolean
 }
@@ -39,7 +39,11 @@ const SignUpForm = ({ setView, methods, onSubmit, loading }: Props) => {
                         placeholder="Jane Doe"
                         {...register("fullName", { required: "Full name is required" })}
                     />
-                    {errors.fullName && <p className="text-sm text-red-500">{errors.fullName.message}</p>}
+                    {errors.fullName && (
+                        <p className="text-sm text-red-500">
+                            {String(errors.fullName?.message)}
+                        </p>
+                    )}
                 </div>
 
                 <div className="*:not-first:mt-2">
@@ -50,7 +54,11 @@ const SignUpForm = ({ setView, methods, onSubmit, loading }: Props) => {
                         type="email"
                         {...register("email", { required: "Email is required" })}
                     />
-                    {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                    {errors.email && (
+                        <p className="text-sm text-red-500">
+                            {String(errors.email?.message)}
+                        </p>
+                    )}
                 </div>
 
                 <div className="*:not-first:mt-2">
@@ -59,9 +67,16 @@ const SignUpForm = ({ setView, methods, onSubmit, loading }: Props) => {
                         id="signup-password"
                         placeholder="Create a password"
                         type="password"
-                        {...register("password", { required: "Password is required", minLength: { value: 6, message: "Password must be at least 6 characters" } })}
+                        {...register("password", {
+                            required: "Password is required",
+                            minLength: { value: 6, message: "Password must be at least 6 characters" },
+                        })}
                     />
-                    {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                    {errors.password && (
+                        <p className="text-sm text-red-500">
+                            {String(errors.password?.message)}
+                        </p>
+                    )}
                 </div>
 
                 <div className="*:not-first:mt-2">
@@ -75,7 +90,11 @@ const SignUpForm = ({ setView, methods, onSubmit, loading }: Props) => {
                             validate: (value) => value === password || "Passwords do not match",
                         })}
                     />
-                    {errors.passwordConfirm && <p className="text-sm text-red-500">{errors.passwordConfirm.message}</p>}
+                    {errors.passwordConfirm && (
+                        <p className="text-sm text-red-500">
+                            {String(errors.passwordConfirm?.message)}
+                        </p>
+                    )}
                 </div>
             </div>
 
